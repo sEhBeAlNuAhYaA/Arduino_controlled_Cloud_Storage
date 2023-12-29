@@ -41,3 +41,44 @@ Display allows you to check any info, joystick is for work with display info, tr
 ### Conclusion
 
 There are a server that catch users requests and display, on it you can see some information. All of it work on `Boost.ASIO`. There is using arduino and some modules for it. 
+
+# Development stages
+
+This part of documentation consits of development stages and describe all of it. Whole programm development has 3 main parts, like a structure of it: Server, Client, Electronics. Each stage of development means what kind of 
+
+1. Creating a server application;
+    * Class for server;
+    * Methods for make a connection with client;
+    * Methods for registration users in net cloud-client;
+    * Methods for manipulate with user data(password and login)
+    * Creating data base class to communicate with DB storage
+        *  Ecrypting password by hash function;
+        *  Store hash of password;
+        *  Compare inputed password with stored hash in DB of users;
+        *  Proccecing errors with DB(no user in db, wrong password);
+        *  Add and delete users data(may be a user-admin, that has root to operate with whole users data);
+    * Catching diferent ruquests from users and send necessary of those, to electronic part(Arduino) by USB, and another use for operate with authetification and data sending;
+    * Some additional functions.
+
+
+2. Creating a client application;
+    * Class for client;
+    * Method those asking for authentification user-data;
+    * Methods for make a connection with server;
+    * Methods for send requests for confirm kind of it(arduino-requests and server-requests);
+    * Methods for files sending;
+    * Methods for take files from server to user reopository;
+
+
+3. Creating a electronic device;
+    * Develop a code for modules communication with arduino;
+        * Class for work with display;
+        * Methods for catch information from server;
+        * Methods for show this info on display;
+        * Methods for conect with joystick;
+        * Processing joystick signals;
+    * Part of code for check current server updates;
+        * Class for catching server requests;
+        * Class for catching server information;
+        * Method for sending to server current state of display info(which user check info);
+
