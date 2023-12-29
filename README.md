@@ -52,12 +52,12 @@ This part of documentation consits of development stages and describe all of it.
     * Methods for registration users in net cloud-client;
     * Methods for manipulate with user data(password and login)
     * Creating data base class to communicate with DB storage
-        *  Ecrypting password by hash function;
+        *  Encrypting password by hash function;
         *  Store hash of password;
         *  Compare inputed password with stored hash in DB of users;
-        *  Proccecing errors with DB(no user in db, wrong password);
+        *  Processing errors with DB(no user in db, wrong password);
         *  Add and delete users data(may be a user-admin, that has root to operate with whole users data);
-    * Catching diferent ruquests from users and send necessary of those, to electronic part(Arduino) by USB, and another use for operate with authetification and data sending;
+    * Catching diferent requests from users and send necessary of those, to electronic part(Arduino) by USB, and another use for operate with authentification and data sending;
     * Some additional functions.
 
 
@@ -67,7 +67,7 @@ This part of documentation consits of development stages and describe all of it.
     * Methods for make a connection with server;
     * Methods for send requests for confirm kind of it(arduino-requests and server-requests);
     * Methods for files sending;
-    * Methods for take files from server to user reopository;
+    * Methods for take files from server to user repository;
 
 
 3. Creating a electronic device;
@@ -75,7 +75,7 @@ This part of documentation consits of development stages and describe all of it.
         * Class for work with display;
         * Methods for catch information from server;
         * Methods for show this info on display;
-        * Methods for conect with joystick;
+        * Methods for connect with joystick;
         * Processing joystick signals;
     * Part of code for check current server updates;
         * Class for catching server requests;
