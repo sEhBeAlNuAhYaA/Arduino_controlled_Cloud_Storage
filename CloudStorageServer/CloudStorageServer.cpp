@@ -10,7 +10,7 @@ class NEW_connection
 {
     //private socket and file
     tcp::socket socket_;
-    boost::array<char,10> http_request;
+    boost::array<char,1024> http_request;
 
 public:
     typedef std::shared_ptr<NEW_connection> pointer;
@@ -33,8 +33,6 @@ public:
 
     void read_async_message() {
 
-        //socket_.read_some(boost::asio::buffer(this->http_request));
-
         socket_.async_read_some(boost::asio::buffer(this->http_request),boost::bind(&NEW_connection::handle_read,
             shared_from_this(),
             boost::asio::placeholders::error,
@@ -51,11 +49,11 @@ private:
         : socket_(context){
     }
 
-    void handle_write(const boost::system::error_code&, size_t) {
+    void handle_write(const boost::system::error_code& err, size_t transferred) {
         //send_async_message();
     }
 
-    void handle_read(const boost::system::error_code&, size_t) {
+    void handle_read(const boost::system::error_code& err, size_t transferred) {
         
         std::cout << std::string(this->http_request.begin(), this->http_request.end()) << std::endl;
         for (auto& el : this->http_request) {

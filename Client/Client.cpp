@@ -5,33 +5,43 @@
 
 using boost::asio::ip::tcp;
 
+class Client {
+
+    boost::asio::io_context& context_;
+    tcp::resolver resolver_;
+    tcp::socket socket_;
+    tcp::resolver::results_type endpoints_;
+    boost::array <char, 1024> current_http_request;
+
+public:
+    Client(boost::asio::io_context& context)
+        : context_(context), resolver_(context), socket_(context), endpoints_(resolver_.resolve("127.0.0.1", "80")), current_http_request{} {
+        boost::asio::connect(socket_, endpoints_);
+    }
+
+    void write_http(boost::array<char, 1024> http_request) {
+        socket_.write_some(boost::asio::buffer(http_request));
+        std::cout << "REQUEST WAS SENDED" << std::endl;
+    }
+
+    void read_http() {
+        socket_.read_some(boost::asio::buffer(current_http_request));
+        std::cout << "[SERVER] " << std::string(current_http_request.begin(), current_http_request.end())<< std::endl;
+    }
+};
+
+
 int main(int argc, char* argv[])
 {
     try
     {
-        
-        boost::asio::io_context io_context;
+        boost::asio::io_context context;
 
-        tcp::resolver resolver(io_context);
-        tcp::resolver::results_type endpoints =
-        resolver.resolve("127.0.0.1", "80");
-
-        tcp::socket socket(io_context);
-        boost::asio::connect(socket, endpoints);
-
-        boost::array<char, 128> buf;
-
-        socket.read_some(boost::asio::buffer(buf));
-
-        std::cout.write(buf.data(), 5);
-
-        boost::system::error_code error;
-            
+        Client client(context);
+                    
         for (;;)
         {
-            std::string buff;
-            getline(std::cin, buff);
-            socket.write_some(boost::asio::buffer(buff));
+            client.read_http();
         }
     }
     catch (std::exception& e)
