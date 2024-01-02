@@ -130,8 +130,7 @@ public:
         std::cout << "[SERVER] request: " << request << std::endl;
 
     }
-
      void setSend_request(boost::array <char,16000> http_request) {
         this->http_request = http_request;
      }
-};
+}; 

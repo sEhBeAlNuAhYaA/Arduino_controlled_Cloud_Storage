@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
             int g;
             std::cin >> g;
             if (g == 1) {
-                client.write_http(http_build.Building("text.txt", POST, "txt\n", "250\n\n", ArduinoInfo));
+                client.write_http(http_build.Building(req_back_converter(ArduinoInfo), POST, "txt\n", "250\n\n", ArduinoInfo));
             }
 
 
