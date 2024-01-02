@@ -10,7 +10,7 @@ class NEW_connection
 {
     //private socket and file
     tcp::socket socket_;
-    boost::array<char,1024> http_request;
+    boost::array<char, 16000> http_request;
 
 public:
     typedef std::shared_ptr<NEW_connection> pointer;
