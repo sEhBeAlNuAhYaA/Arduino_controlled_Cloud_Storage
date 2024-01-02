@@ -3,7 +3,11 @@
 #include <boost/asio.hpp>
 #include <string>
 #include "Http_Builder.h"
+
 using boost::asio::ip::tcp;
+
+
+
 
 class Client {
     //needed params for make connection
@@ -53,7 +57,7 @@ int main(int argc, char* argv[])
             int g;
             std::cin >> g;
             if (g == 1) {
-                client.write_http(http_build.Building("text.txt", POST, "txt\n", "250\n\n"));
+                client.write_http(http_build.Building("text.txt", POST, "txt\n", "250\n\n", ArduinoInfo));
             }
 
 
