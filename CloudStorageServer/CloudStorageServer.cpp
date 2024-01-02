@@ -4,18 +4,22 @@
 #include <boost/bind.hpp>
 
 using boost::asio::ip::tcp;
+struct Vector_Clients;
+static int client_ID_counter = 0;
 
 class NEW_connection 
     : public std::enable_shared_from_this<NEW_connection>
 {
     //private socket and file
     tcp::socket socket_;
+    int client_ID;
     boost::array<char, 16000> http_request;
 
 public:
     typedef std::shared_ptr<NEW_connection> pointer;
-   
+    
     static pointer create(boost::asio::io_context& context) {
+        
         return pointer(new NEW_connection(context));
     }
     //get socket
@@ -37,16 +41,13 @@ public:
             shared_from_this(),
             boost::asio::placeholders::error,
             boost::asio::placeholders::bytes_transferred));
-
-        /*boost::asio::async_read(this->socket_, boost::asio::buffer(this->http_request), 
-            boost::bind(&NEW_connection::handle_read, shared_from_this(),
-            boost::asio::placeholders::error,
-            boost::asio::placeholders::bytes_transferred));*/
-     }
+    }
 
 private:
     NEW_connection(boost::asio::io_context& context)
         : socket_(context){
+        client_ID_counter++;
+        client_ID = client_ID_counter;
     }
 
     void handle_write(const boost::system::error_code& err, size_t transferred) {
@@ -54,8 +55,7 @@ private:
     }
 
     void handle_read(const boost::system::error_code& err, size_t transferred) {
-        
-        std::cout << std::string(this->http_request.begin(), this->http_request.end()) << std::endl;
+        std::cout <<"[CLIENT " << this->client_ID << "]\n" << std::string(this->http_request.begin(), this->http_request.end()) << std::endl;
         for (auto& el : this->http_request) {
             el = '\0';
         }
@@ -77,7 +77,7 @@ public:
 private:
     void start_accept() {
         NEW_connection::pointer new_connection = NEW_connection::create(this->context_);
-
+        
         acceptor_.async_accept(new_connection->get_socket(),
             boost::bind(&Cloud_Storage::handle_accept, this, 
                 new_connection, boost::asio::placeholders::error));
@@ -108,9 +108,7 @@ std::string make_daytime_string()
 int main()
 { 
     boost::asio::io_context context;
-
     Cloud_Storage storage(context);
-
     context.run();
 
     return 0;
