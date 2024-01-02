@@ -22,7 +22,7 @@ public:
     //sync write
     void write_http(boost::array<char, 16000> http_request) {
         socket_.write_some(boost::asio::buffer(http_request));
-        std::cout << "[CLIENT] REQUEST WAS SENDED" << std::endl;
+        std::cout << "[CLIENT] REQUEST WAS SEND" << std::endl;
     }
     //sync read
     void read_http() {
@@ -31,7 +31,7 @@ public:
     }
 
     void send_something(){
-
+        
     }
 };
 

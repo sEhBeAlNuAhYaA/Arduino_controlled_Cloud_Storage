@@ -13,15 +13,12 @@ void insert_in_array(boost::array <char,16000>& http_request, std::string insert
     }
 }
 
-
 enum Http_Methods {
    GET,
    POST,   
    PUT,
    DEL
 };
-
-
 
 enum requests_types {
     ArduinoInfo,
