@@ -17,8 +17,7 @@ class NEW_connection
     //private socket and file
     tcp::socket socket_;
     int client_ID;
-    boost::array<char, 16000> http_request;
-
+    std::string http_request;
 public:
     typedef std::shared_ptr<NEW_connection> pointer;
     
@@ -43,6 +42,7 @@ public:
             shared_from_this(),
             boost::asio::placeholders::error,
             boost::asio::placeholders::bytes_transferred));
+            
     }
 
     int getID() {
@@ -54,6 +54,10 @@ private:
         : socket_(context){
         client_ID_counter++;
         client_ID = client_ID_counter;
+        this->http_request = "";
+        for (int i = 0; i < 32000; i++) {
+            this->http_request += '$';
+        }
     }
 
     
@@ -63,13 +67,16 @@ private:
 
     void handle_read(const boost::system::error_code& err, size_t transferred) {
         if (!err) {
+            for (auto el : this->http_request) {
+                if (el == '$') {
+                    this->http_request.erase(this->http_request.find(el));
+                    break;
+                }
+            }
 
-            std::cout <<"[CLIENT " << this->client_ID << "]\n" << std::string(this->http_request.begin(), this->http_request.end()) << std::endl;
             parser.setSend_request(this->http_request);
             parser.Parsing();
-            for (auto& el : this->http_request) {
-                el = '\0';
-            }
+            //std::cout <<"[CLIENT " << this->client_ID << "]\n" << this->http_request << std::endl;
             read_async_message();
         }
         else {
@@ -102,7 +109,7 @@ private:
 
     void handle_accept(NEW_connection::pointer new_connection, const boost::system::error_code& error) {
         if (!error) {
-
+            
             new_connection->send_async_message();
             std::cout << "[SERVER] " << "CLIENT(ID:" << new_connection->getID() << ") joined the server" << std::endl;
             new_connection->read_async_message();

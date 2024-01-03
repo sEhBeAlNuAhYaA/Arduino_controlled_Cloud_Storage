@@ -15,23 +15,39 @@ class Client {
     tcp::resolver resolver_;
     tcp::socket socket_;
     tcp::resolver::results_type endpoints_;
-    boost::array <char, 16000> current_http_request;
+    std::string current_http_request;
 
 public:
     //constructor
     Client(boost::asio::io_context& context)
         : context_(context), resolver_(context), socket_(context), endpoints_(resolver_.resolve("127.0.0.1", "80")), current_http_request{} {
         boost::asio::connect(socket_, endpoints_);
+        this->current_http_request = "";
+        this->fill_request();
+    }
+    void fill_request() {
+         for (int i = 0; i < 32000; i++) {
+            this->current_http_request += '$';
+        }
     }
     //sync write
-    void write_http(boost::array<char, 16000> http_request) {
+    void write_http(std::string http_request) {
         socket_.write_some(boost::asio::buffer(http_request));
         std::cout << "[CLIENT] REQUEST WAS SEND" << std::endl;
     }
     //sync read
     void read_http() {
         socket_.read_some(boost::asio::buffer(current_http_request));
+        for (auto el : this->current_http_request) {
+            if (el == '$') {
+                this->current_http_request.erase(this->current_http_request.find(el));
+                break;
+            }
+        }
         std::cout << "[SERVER] " << std::string(current_http_request.begin(), current_http_request.end())<< std::endl;
+        
+        this->current_http_request = "";
+        this->fill_request();
     }
 
     void send_something(){
@@ -57,7 +73,9 @@ int main(int argc, char* argv[])
             int g;
             std::cin >> g;
             if (g == 1) {
-                client.write_http(http_build.Building(req_back_converter(ArduinoInfo), POST, "txt\n", "250\n\n", ArduinoInfo));
+                http_build.Building("ArduinoInfo", POST, "txt\n", "250\n\n", ArduinoInfo);
+                client.write_http(http_build.getBuildRequest());
+                http_build.clear_build();
             }
 
 

@@ -49,18 +49,18 @@ std::string req_back_converter(requests_types type) {
     return "RequestsError";
 }
 
-void insert_in_array(boost::array <char,16000>& http_request, std::string insert_string, int begin) {
-    for (int i = begin; i <= insert_string.size() + begin; i++) {
-        http_request[i] = insert_string[i - begin];
-    }
+void insert_in_array(std::string& http_request, std::string insert_string, int begin) {
+    http_request += insert_string;
 }
 
 class Http_Builder {
-    boost::array <char, 16000> http_request;
+    std::string http_request;
 public:
     Http_Builder() : http_request{} {
     }
-
+    std::string getBuildRequest() {
+        return this->http_request;
+    }
     int Fill_Http(int start, std::string name, std::string filetype, std::string file_size, Http_Methods method) {
         insert_in_array(this->http_request, name, start);
         insert_in_array(this->http_request, " HTTP/1.1\n", start + name.size());
@@ -77,7 +77,7 @@ public:
         return start + 11 + name.size();
     }
 
-    boost::array <char, 16000> Building(std::string name, Http_Methods method, std::string filetype, std::string file_size, requests_types req_type){
+    void Building(std::string name, Http_Methods method, std::string filetype, std::string file_size, requests_types req_type){
         switch (method) {
         case GET: {
             insert_in_array(this->http_request, "GET /", 0);
@@ -104,12 +104,14 @@ public:
         for (auto el : this->http_request) {
                 std::cout << el;
         }
-        return this->http_request;
+    }
+    void clear_build() {
+        this->http_request = "";
     }
 };
 
 class Http_Parser {
-    boost::array <char,16000> http_request;
+    std::string http_request;
 public:
     Http_Parser() : http_request{} {
     }
@@ -130,7 +132,7 @@ public:
         std::cout << "[SERVER] request: " << request << std::endl;
     }
 
-     void setSend_request(boost::array <char,16000> http_request) {
+     void setSend_request(std::string http_request) {
         this->http_request = http_request;
      }
 };
