@@ -2,8 +2,13 @@
 #include <boost/asio.hpp>
 #include <boost/array.hpp>
 #include <boost/bind.hpp>
-//#include "Http_Builder.h"
+#include <chrono>
+#include <thread>
+#include <vector>
+#include <Http_Builder.h>
 using boost::asio::ip::tcp;
+
+std::vector <std::string> queue;
 
 struct Vector_Clients;
 static int client_ID_counter = 0;
@@ -31,11 +36,21 @@ public:
     }
 
     void send_async_message() {
-        
-        socket_.async_write_some(boost::asio::mutable_buffer(this->http_request, 1024),
-            boost::bind(&NEW_connection::handle_write, shared_from_this(),
-            boost::asio::placeholders::error,
-            boost::asio::placeholders::bytes_transferred));
+        boost::system::error_code error;
+        socket_.write_some(boost::asio::mutable_buffer(this->http_request,1024));
+        if (!error) {
+            std::cout << "MESSAGE WAS SEND" << std::endl;
+            //clear this->http_request
+            memset(this->http_request, 0, sizeof(this->http_request));
+        }
+        else {
+            std::cout << error.message() << std::endl;
+        }
+
+       // socket_.async_write_some(boost::asio::mutable_buffer(this->http_request, 1024),
+         //   boost::bind(&NEW_connection::handle_write, shared_from_this(),
+        //    boost::asio::placeholders::error,
+         //   boost::asio::placeholders::bytes_transferred));
     }
 
     void read_async_message() {
@@ -75,12 +90,29 @@ private:
 
     void handle_read(const boost::system::error_code& err, size_t transferred) {
         if (!err) {
-            std::cout << "MESSAGE WAS TAKED" << std::endl;
-            std::cout << this->http_request << std::endl;
+            queue.push_back(this->http_request);
+            memset(this->http_request, 0, sizeof(this->http_request));
             read_async_message();
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+            std::cout << "MESSAGE WAS TAKED" << std::endl;
+            //std::this_thread::sleep_for(std::chrono::seconds(5));
+            for (int i = 0; i < queue.size();i++) {
+                auto el = queue[i];
+                std::cout << std::endl << "current request: "<< i << std::endl << el << std::endl;
+            }
+
+           
+            //clear this->http_request
+            //memset(this->http_request, 0, sizeof(this->http_request));
         }
         else {
-            std::cout << err.what() << std::endl;
+            if (err.value() == 10054) {
+                std::cout << "CLIENT(ID:" << this->client_ID << ") disconnected" << std::endl;
+            }
+            else {
+                std::cout << err.what() << std::endl;
+            }
+            
         }
         
     }
@@ -138,6 +170,6 @@ int main()
     std::cout << "[SERVER] START" << std::endl;
 
     context.run();
-
+    
     return 0;
 }

@@ -38,7 +38,7 @@ public:
     }
     //sync read
     void read_http() {
-        size_t len = socket_.read_some(boost::asio::mutable_buffer(current_http_request, 1024));
+        size_t len = socket_.read_some(boost::asio::mutable_buffer(this->current_http_request, 1024));
         if (error) {
             std::cout << error.what() << std::endl;
         }
@@ -68,24 +68,20 @@ int main(int argc, char* argv[])
                
         //client.registration_check(http_build, http_pars);
 
-        char* request = new char[1024];
-
-        std::string req = "HI from client!";
-
+ 
         Http_Builder build;
-        build.Builder(Registration);
-        client.setRequest(build.get_HTTP());
-
-        for (int i = 0; i < req.size(); i++) {
-            request[i] = req[i];
-        }
-
+        client.setRequest(build.Builder(ArduinoInfo));
+     
         for (;;)
         {
             int g;
             std::cin >> g;
             if (g == 1) {
                 //client.setRequest(request);        
+                client.write_http();
+            }
+            if (g == 2) {
+                client.setRequest(build.Builder(RegistrationCheck));
                 client.write_http();
             }
 
