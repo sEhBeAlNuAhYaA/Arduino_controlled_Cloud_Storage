@@ -58,24 +58,23 @@ class Http_Builder {
 public:
     Http_Builder() : http_request{} {
     }
-
+    std::string getBuildRequest() {
+        return this->http_request;
+    }
     int Fill_Http(int start, std::string name, std::string filetype, std::string file_size, Http_Methods method) {
         insert_in_array(this->http_request, name, start);
         insert_in_array(this->http_request, " HTTP/1.1\n", start + name.size());
-        if (method == PUT || method == POST) {
+        if (method == POST) {
             insert_in_array(this->http_request, "Content-Type: ", start + 11 + name.size());
-            if (method == POST) {
-                insert_in_array(this->http_request, filetype, start + 26 + name.size());
-                insert_in_array(this->http_request, "Content-Length: ", start + filetype.size() + 26 + name.size());
-                insert_in_array(this->http_request, file_size, start + filetype.size() + 43 + name.size());
-                return start + filetype.size() + 43 + name.size() + file_size.size();
-            }
-            return  start + 26 + name.size();
+            insert_in_array(this->http_request, filetype, start + 26 + name.size());
+            insert_in_array(this->http_request, "Content-Length: ", start + filetype.size() + 26 + name.size());
+            insert_in_array(this->http_request, file_size, start + filetype.size() + 43 + name.size());
+            return start + filetype.size() + 43 + name.size() + file_size.size();
         }
         return start + 11 + name.size();
     }
 
-    std::string Building(std::string name, Http_Methods method, std::string filetype, std::string file_size, requests_types req_type){
+    void Building(std::string name, Http_Methods method, std::string filetype, std::string file_size){
         switch (method) {
         case GET: {
             insert_in_array(this->http_request, "GET /", 0);
@@ -102,7 +101,9 @@ public:
         for (auto el : this->http_request) {
                 std::cout << el;
         }
-        return this->http_request;
+    }
+    void clear_build() {
+        this->http_request = "";
     }
 };
 
@@ -111,7 +112,7 @@ class Http_Parser {
 public:
     Http_Parser() : http_request{} {
     }
-    void Parsing() {
+    std::string Parsing() {
         std::string request = "";
         bool itis = false;
         for (int i = 0; i < 30; i++) {
@@ -119,13 +120,14 @@ public:
                 itis = true;
             }
             if (itis) {
-                request += http_request[i+1];
-                if (http_request[i + 2] == 'H') {
+                if (http_request[i + 2] == ' ') {
                     break;
                 }
+                request += http_request[i+2];
             }
         }
         std::cout << "[SERVER] request: " << request << std::endl;
+        return request;
     }
 
      void setSend_request(std::string http_request) {

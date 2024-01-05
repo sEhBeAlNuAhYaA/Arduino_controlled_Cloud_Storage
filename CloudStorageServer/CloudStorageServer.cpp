@@ -2,14 +2,14 @@
 #include <boost/asio.hpp>
 #include <boost/array.hpp>
 #include <boost/bind.hpp>
-#include "Http_Builder.h"
+//#include "Http_Builder.h"
 using boost::asio::ip::tcp;
 
 struct Vector_Clients;
 static int client_ID_counter = 0;
 
-Http_Builder builder;
-Http_Parser parser;
+//Http_Builder builder;
+//Http_Parser parser;
 
 class NEW_connection 
     : public std::enable_shared_from_this<NEW_connection>
@@ -17,7 +17,8 @@ class NEW_connection
     //private socket and file
     tcp::socket socket_;
     int client_ID;
-    std::string http_request;
+    char *http_request;
+
 public:
     typedef std::shared_ptr<NEW_connection> pointer;
     
@@ -30,57 +31,56 @@ public:
     }
 
     void send_async_message() {
-
-        boost::asio::async_write(this->socket_, boost::asio::buffer("CONNECTED!"),
+        
+        socket_.async_write_some(boost::asio::mutable_buffer(this->http_request, 1024),
             boost::bind(&NEW_connection::handle_write, shared_from_this(),
             boost::asio::placeholders::error,
             boost::asio::placeholders::bytes_transferred));
     }
 
     void read_async_message() {
-        socket_.async_read_some(boost::asio::buffer(this->http_request),boost::bind(&NEW_connection::handle_read,
+        socket_.async_read_some(boost::asio::mutable_buffer(this->http_request, 1024),boost::bind(&NEW_connection::handle_read,
             shared_from_this(),
             boost::asio::placeholders::error,
             boost::asio::placeholders::bytes_transferred));
-            
     }
 
     int getID() {
         return this->client_ID;
     }
 
+    void setHttp_request(std::string input_string) {
+        for (int i = 0; i < input_string.size(); i++) {
+            this->http_request[i] = input_string[i];
+        }
+    }
+
 private:
     NEW_connection(boost::asio::io_context& context)
-        : socket_(context){
+        : socket_(context) {
         client_ID_counter++;
         client_ID = client_ID_counter;
-        this->http_request = "";
-        for (int i = 0; i < 32000; i++) {
-            this->http_request += '$';
-        }
+        this->http_request = new char[1024];
     }
 
     
     void handle_write(const boost::system::error_code& err, size_t transferred) {
-        //send_async_message();
+        if (!err) {
+            std::cout << "MESSAGE WAS SEND" << std::endl;
+        }
+        else {
+            std::cout << err.what() << std::endl;
+        }
     }
 
     void handle_read(const boost::system::error_code& err, size_t transferred) {
         if (!err) {
-            for (auto el : this->http_request) {
-                if (el == '$') {
-                    this->http_request.erase(this->http_request.find(el));
-                    break;
-                }
-            }
-
-            parser.setSend_request(this->http_request);
-            parser.Parsing();
-            //std::cout <<"[CLIENT " << this->client_ID << "]\n" << this->http_request << std::endl;
+            std::cout << "MESSAGE WAS TAKED" << std::endl;
+            std::cout << this->http_request << std::endl;
             read_async_message();
         }
         else {
-            std::cout << "[SERVER] " << "CLIENT(ID:" << this->client_ID << ") left the server" << std::endl;
+            std::cout << err.what() << std::endl;
         }
         
     }
@@ -109,7 +109,7 @@ private:
 
     void handle_accept(NEW_connection::pointer new_connection, const boost::system::error_code& error) {
         if (!error) {
-            
+            new_connection->setHttp_request("CONNECTED!");
             new_connection->send_async_message();
             std::cout << "[SERVER] " << "CLIENT(ID:" << new_connection->getID() << ") joined the server" << std::endl;
             new_connection->read_async_message();

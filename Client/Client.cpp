@@ -15,44 +15,43 @@ class Client {
     tcp::resolver resolver_;
     tcp::socket socket_;
     tcp::resolver::results_type endpoints_;
-    std::string current_http_request;
+    char* current_http_request;
+    boost::system::error_code error;
+    
 
 public:
     //constructor
     Client(boost::asio::io_context& context)
-        : context_(context), resolver_(context), socket_(context), endpoints_(resolver_.resolve("127.0.0.1", "80")), current_http_request{} {
+        : context_(context), resolver_(context), socket_(context), endpoints_(resolver_.resolve("127.0.0.1", "80")) {
         boost::asio::connect(socket_, endpoints_);
-        this->current_http_request = "";
-        this->fill_request();
-    }
-    void fill_request() {
-         for (int i = 0; i < 32000; i++) {
-            this->current_http_request += '$';
-        }
+        this->current_http_request = new char[1024];
     }
     //sync write
-    void write_http(std::string http_request) {
-        socket_.write_some(boost::asio::buffer(http_request));
-        std::cout << "[CLIENT] REQUEST WAS SEND" << std::endl;
+    void write_http() {
+        socket_.write_some(boost::asio::mutable_buffer(this->current_http_request, 1024));
+        if (!error) {
+            std::cout << "[CLIENT] REQUEST WAS SEND" << std::endl;
+        }
+        else {
+            std::cout << error.what() << std::endl;
+        }
     }
     //sync read
     void read_http() {
-        socket_.read_some(boost::asio::buffer(current_http_request));
-        for (auto el : this->current_http_request) {
-            if (el == '$') {
-                this->current_http_request.erase(this->current_http_request.find(el));
-                break;
-            }
+        size_t len = socket_.read_some(boost::asio::mutable_buffer(current_http_request, 1024));
+        if (error) {
+            std::cout << error.what() << std::endl;
         }
-        std::cout << "[SERVER] " << std::string(current_http_request.begin(), current_http_request.end())<< std::endl;
-        
-        this->current_http_request = "";
-        this->fill_request();
+ 
+        std::cout << std::string(this->current_http_request) << std::endl;
+        std::cout << "Size of cathed message: " << len << std::endl;
     }
 
-    void send_something(){
+    void setRequest(char* request) {
         
+        this->current_http_request = request;
     }
+
 };
 
 
@@ -63,19 +62,31 @@ int main(int argc, char* argv[])
         //init context and create client class object
         boost::asio::io_context context;
         Client client(context);
+
         client.read_http();
         
-        Http_Builder http_build;
-        Http_Parser http_pars;
-                    
+               
+        //client.registration_check(http_build, http_pars);
+
+        char* request = new char[1024];
+
+        std::string req = "HI from client!";
+
+        Http_Builder build;
+        build.Builder(Registration);
+        client.setRequest(build.get_HTTP());
+
+        for (int i = 0; i < req.size(); i++) {
+            request[i] = req[i];
+        }
+
         for (;;)
         {
             int g;
             std::cin >> g;
             if (g == 1) {
-                http_build.Building("ArduinoInfo", POST, "txt\n", "250\n\n", ArduinoInfo);
-                client.write_http(http_build.getBuildRequest());
-                http_build.clear_build();
+                //client.setRequest(request);        
+                client.write_http();
             }
 
 

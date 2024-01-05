@@ -6,9 +6,6 @@
 #include <string>
 
 
-using boost::asio::ip::tcp;
-
-
 enum Http_Methods {
    GET,
    POST,   
@@ -23,8 +20,10 @@ enum requests_types {
     Authorisation,
     SendingAFile,
     TakingAFile,
+    DeleteAFile,
     ErrorFromServer,
-    RequestsError
+    RequestsError,
+    RequestAnswer
 };
 
 requests_types req_converter(std::string str_req) {
@@ -35,6 +34,7 @@ requests_types req_converter(std::string str_req) {
     if (str_req == "SendingAFile") return SendingAFile;
     if (str_req == "TakingAFile") return TakingAFile;
     if (str_req == "ErrorFromServer") return ErrorFromServer;
+    if (str_req == "RequestAnswer") return RequestAnswer;
     return RequestsError;
 }
 
@@ -46,93 +46,86 @@ std::string req_back_converter(requests_types type) {
     if (type == SendingAFile) return "SendingAFile";
     if (type == TakingAFile) return "TakingAFile";
     if (type == ErrorFromServer) return "ErrorFromServer";
+    if (type == RequestAnswer) return "RequestAnswer";
     return "RequestsError";
 }
 
-void insert_in_array(std::string& http_request, std::string insert_string, int begin) {
-    http_request += insert_string;
+
+void filling_an_array(char* http_request, std::string input_string, int begin) {
+    for (int i = begin; i < input_string.size() + begin; i++) {
+        http_request[i] = input_string[i - begin];
+    }
 }
 
 class Http_Builder {
-    std::string http_request;
+    char* http_builded;
 public:
-    Http_Builder() : http_request{} {
+
+    Http_Builder() {
+        this->http_builded = new char[1024];
     }
-    std::string getBuildRequest() {
-        return this->http_request;
+    
+    void Builder(requests_types type_of_request, std::string type_of_file) {
+        if (type_of_request == RequestsError) {
+            //return this->http_builded;
+        }
+
+        if (type_of_request == SendingAFile) {
+
+        }
+
+        if (type_of_request == TakingAFile || type_of_request == DeleteAFile) {
+
+        }
     }
-    int Fill_Http(int start, std::string name, std::string filetype, std::string file_size, Http_Methods method) {
-        insert_in_array(this->http_request, name, start);
-        insert_in_array(this->http_request, " HTTP/1.1\n", start + name.size());
-        if (method == PUT || method == POST) {
-            insert_in_array(this->http_request, "Content-Type: ", start + 11 + name.size());
-            if (method == POST) {
-                insert_in_array(this->http_request, filetype, start + 26 + name.size());
-                insert_in_array(this->http_request, "Content-Length: ", start + filetype.size() + 26 + name.size());
-                insert_in_array(this->http_request, file_size, start + filetype.size() + 43 + name.size());
-                return start + filetype.size() + 43 + name.size() + file_size.size();
+
+    void Builder(requests_types type_of_request) {
+        if (type_of_request == RequestsError) {
+            //return this->http_builded;
+        }
+        
+        if (type_of_request == ArduinoInfo || type_of_request == RegistrationCheck) {
+            filling_an_array(this->http_builded, "HEADER / ", 0);
+            filling_an_array(this->http_builded, req_back_converter(type_of_request), 9);
+            filling_an_array(this->http_builded, " HTTP / 1.1\n", 10 + req_back_converter(type_of_request).size());
+        }
+        if (type_of_request == Registration || type_of_request == Authorisation 
+                                            || type_of_request == RequestAnswer 
+                                            || type_of_request == ErrorFromServer) {
+            if (type_of_request == Registration || type_of_request == Authorisation) {
+                filling_an_array(this->http_builded, "PUT / ", 0);
+                filling_an_array(this->http_builded, req_back_converter(type_of_request), 6);
+                filling_an_array(this->http_builded, " HTTP / 1.1\n", 7 + req_back_converter(type_of_request).size());
+                std::string login;
+                std::string password;
+                std::cout << "Enter your login: ";
+                std::cin >> login;
+                std::cout << std::endl << "Enter your password: ";
+                std::cin >> password;
+                filling_an_array(this->http_builded, "\n{\nlogin=", req_back_converter(type_of_request).size() + 20);
+                filling_an_array(this->http_builded, login, req_back_converter(type_of_request).size() + 29);
+                filling_an_array(this->http_builded, "\npassword=", req_back_converter(type_of_request).size() + 29 + login.size());
+                filling_an_array(this->http_builded, password, req_back_converter(type_of_request).size() + 40 + login.size());
+                filling_an_array(this->http_builded, "\n}", req_back_converter(type_of_request).size() + 40 + login.size() + password.size());
             }
-            return  start + 26 + name.size();
         }
-        return start + 11 + name.size();
     }
 
-    void Building(std::string name, Http_Methods method, std::string filetype, std::string file_size, requests_types req_type){
-        switch (method) {
-        case GET: {
-            insert_in_array(this->http_request, "GET /", 0);
-            Fill_Http(5, name, filetype, file_size, GET);
-            break;
-        }
-        case POST: {
-            insert_in_array(this->http_request, "POST /", 0);
-            Fill_Http(6, name, filetype, file_size, POST);        
-            break;
-        }
-        case PUT: {
-            insert_in_array(this->http_request, "PUT / ", 0);
-            Fill_Http(5, name, filetype, file_size, PUT);
+    char* get_HTTP() {
+        return this->http_builded;
+    }
 
-            break;
-        }
-        case DEL: {
-            insert_in_array(this->http_request, "DEL /", 0);
-            Fill_Http(5, name, filetype, file_size, DEL);
-            break;
-        }
-        }
-        for (auto el : this->http_request) {
-                std::cout << el;
-        }
-    }
-    void clear_build() {
-        this->http_request = "";
-    }
+    
 };
 
+
 class Http_Parser {
-    std::string http_request;
+    char* http_parsed;
 public:
-    Http_Parser() : http_request{} {
-    }
-    void Parsing() {
-        std::string request = "";
-        bool itis = false;
-        for (int i = 0; i < 30; i++) {
-            if (http_request[i] == '/') {
-                itis = true;
-            }
-            if (itis) {
-                request += http_request[i+1];
-                if (http_request[i + 2] == 'H') {
-                    break;
-                }
-            }
-        }
-        std::cout << "[SERVER] request: " << request << std::endl;
+
+    Http_Parser(char* http_parsed) {
+        this->http_parsed = http_parsed;
     }
 
-     void setSend_request(std::string http_request) {
-        this->http_request = http_request;
-     }
+
 };
