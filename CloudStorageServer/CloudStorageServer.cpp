@@ -4,11 +4,11 @@
 #include <boost/bind.hpp>
 #include <chrono>
 #include <thread>
-#include <stack>
+#include <queue>
 #include <Http_Builder.h>
 using boost::asio::ip::tcp;
 
-std::stack <std::string> request_stack;
+std::queue <std::string> request_queue;
 
 struct Vector_Clients;
 static int client_ID_counter = 0;
@@ -59,8 +59,9 @@ public:
             
             if (!error) {
             std::cout << "[SERVER] message was taked" << std::endl;
-            request_stack.push(std::string(this->http_request));
-            std::cout << request_stack.top() << std::endl;
+            request_queue.push(std::string(this->http_request));
+            std::cout << request_queue.front() << std::endl;
+            request_queue.pop();
             }
             else {
                 std::cout << error.message() << std::endl;
@@ -91,7 +92,7 @@ private:
         this->http_request = new char[1024];
     }
 
-    
+    /*
     void handle_write(const boost::system::error_code& err, size_t transferred) {
         if (!err) {
             std::cout << "MESSAGE WAS SEND" << std::endl;
@@ -117,6 +118,7 @@ private:
         }
         
     }
+    */
 };
 
 class Cloud_Storage {
