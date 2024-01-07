@@ -27,8 +27,8 @@ public:
         this->current_http_request = new char[1024];
     }
     //sync write
-    void write_http() {
-        socket_.write_some(boost::asio::mutable_buffer(this->current_http_request, 1024));
+    void write_http(char* http_request) {
+        socket_.write_some(boost::asio::mutable_buffer(http_request, 1024));
         if (!error) {
             std::cout << "[CLIENT] REQUEST WAS SEND" << std::endl;
         }
@@ -48,10 +48,12 @@ public:
     }
 
     void setRequest(char* request) {
-        
         this->current_http_request = request;
     }
 
+    void clearRequest() {
+        memset(this->current_http_request, 0, 1024);
+    }
 };
 
 
@@ -69,20 +71,20 @@ int main(int argc, char* argv[])
         //client.registration_check(http_build, http_pars);
 
  
-        Http_Builder build;
-        client.setRequest(build.Builder(ArduinoInfo));
-     
+                
         for (;;)
         {
+            Http_Builder build;
             int g;
             std::cin >> g;
             if (g == 1) {
                 //client.setRequest(request);        
-                client.write_http();
+                client.write_http(build.Builder(ArduinoInfo));
+                client.clearRequest();
             }
             if (g == 2) {
-                client.setRequest(build.Builder(RegistrationCheck));
-                client.write_http();
+                client.write_http(build.Builder(RegistrationCheck));
+                client.clearRequest();
             }
 
 

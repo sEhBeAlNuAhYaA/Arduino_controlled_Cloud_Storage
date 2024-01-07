@@ -4,11 +4,11 @@
 #include <boost/bind.hpp>
 #include <chrono>
 #include <thread>
-#include <vector>
+#include <stack>
 #include <Http_Builder.h>
 using boost::asio::ip::tcp;
 
-std::vector <std::string> queue;
+std::stack <std::string> request_stack;
 
 struct Vector_Clients;
 static int client_ID_counter = 0;
@@ -23,6 +23,7 @@ class NEW_connection
     tcp::socket socket_;
     int client_ID;
     char *http_request;
+    boost::system::error_code error;
 
 public:
     typedef std::shared_ptr<NEW_connection> pointer;
@@ -35,29 +36,41 @@ public:
         return socket_;
     }
 
-    void send_async_message() {
-        boost::system::error_code error;
+    void send_message() {
         socket_.write_some(boost::asio::mutable_buffer(this->http_request,1024));
         if (!error) {
-            std::cout << "MESSAGE WAS SEND" << std::endl;
-            //clear this->http_request
+            std::cout << "[SERVER] message was send" << std::endl;
             memset(this->http_request, 0, sizeof(this->http_request));
         }
         else {
             std::cout << error.message() << std::endl;
         }
 
-       // socket_.async_write_some(boost::asio::mutable_buffer(this->http_request, 1024),
-         //   boost::bind(&NEW_connection::handle_write, shared_from_this(),
-        //    boost::asio::placeholders::error,
-         //   boost::asio::placeholders::bytes_transferred));
     }
 
-    void read_async_message() {
-        socket_.async_read_some(boost::asio::mutable_buffer(this->http_request, 1024),boost::bind(&NEW_connection::handle_read,
-            shared_from_this(),
-            boost::asio::placeholders::error,
-            boost::asio::placeholders::bytes_transferred));
+    void process_client_message() {
+
+    }
+
+    void read_message() {
+      
+        try {
+            socket_.read_some(boost::asio::mutable_buffer(this->http_request,1024), error);
+            
+            if (!error) {
+            std::cout << "[SERVER] message was taked" << std::endl;
+            request_stack.push(std::string(this->http_request));
+            std::cout << request_stack.top() << std::endl;
+            }
+            else {
+                std::cout << error.message() << std::endl;
+                return;
+            }
+            read_message();
+        }
+        catch(const boost::system::error_code& err){
+            std::cout << err.message() << std::endl;
+        }
     }
 
     int getID() {
@@ -88,22 +101,10 @@ private:
         }
     }
 
-    void handle_read(const boost::system::error_code& err, size_t transferred) {
+    void handle_read(const boost::system::error_code& err, size_t transferred, std::string http_request) {
         if (!err) {
-            queue.push_back(this->http_request);
-            memset(this->http_request, 0, sizeof(this->http_request));
-            read_async_message();
-            std::this_thread::sleep_for(std::chrono::seconds(5));
+            read_message();
             std::cout << "MESSAGE WAS TAKED" << std::endl;
-            //std::this_thread::sleep_for(std::chrono::seconds(5));
-            for (int i = 0; i < queue.size();i++) {
-                auto el = queue[i];
-                std::cout << std::endl << "current request: "<< i << std::endl << el << std::endl;
-            }
-
-           
-            //clear this->http_request
-            //memset(this->http_request, 0, sizeof(this->http_request));
         }
         else {
             if (err.value() == 10054) {
@@ -142,11 +143,15 @@ private:
     void handle_accept(NEW_connection::pointer new_connection, const boost::system::error_code& error) {
         if (!error) {
             new_connection->setHttp_request("CONNECTED!");
-            new_connection->send_async_message();
+            new_connection->send_message();
             std::cout << "[SERVER] " << "CLIENT(ID:" << new_connection->getID() << ") joined the server" << std::endl;
-            new_connection->read_async_message();
+            new_connection->read_message();
+            start_accept();
         }
-        start_accept();
+        else {
+            std::cout << error.what() << std::endl;
+            return;
+        }
     }
 };
 
