@@ -85,7 +85,7 @@ public:
     
     char* Builder_Answer(requests_types type_of_request,std::string message) {
         if (type_of_request == RequestAnswer) {
-            filling_an_array("HEADER / ");
+            filling_an_array("HEAD / ");
             filling_an_array(req_back_converter(type_of_request));
             filling_an_array(" HTTP / 1.1\n");
             filling_an_array("\n{\n");

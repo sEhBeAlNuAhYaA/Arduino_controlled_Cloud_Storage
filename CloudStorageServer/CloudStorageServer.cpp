@@ -37,43 +37,19 @@ public:
     }
 
     void send_message() {
-        socket_.write_some(boost::asio::mutable_buffer(this->http_request,1024));
-        if (!error) {
-            std::cout << "[SERVER] message was send" << std::endl;
-            memset(this->http_request, 0, sizeof(this->http_request));
-        }
-        else {
-            std::cout << error.message() << std::endl;
-        }
-
-    }
-
-    void process_client_message() {
-
+        socket_.async_write_some(boost::asio::mutable_buffer(this->http_request, 1024),
+            boost::bind(&NEW_connection::handle_write, shared_from_this(), 
+                boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred)); 
     }
 
     void read_message() {
-      
-        try {
-            socket_.read_some(boost::asio::mutable_buffer(this->http_request,1024), error);
-            
-            if (!error) {
-            std::cout << "[SERVER] message was taked" << std::endl;
-            request_queue.push(std::string(this->http_request));
-            std::cout << request_queue.front() << std::endl;
-            request_queue.pop();
-            }
-            else {
-                std::cout << error.message() << std::endl;
-                return;
-            }
-            read_message();
-        }
-        catch(const boost::system::error_code& err){
-            std::cout << err.message() << std::endl;
-        }
+        //socket_.read_some(boost::asio::mutable_buffer(this->http_request,1024), error);
+        socket_.async_read_some(boost::asio::mutable_buffer(this->http_request, 1024),
+            boost::bind(&NEW_connection::handle_read, shared_from_this(),
+               boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));         
     }
 
+    
     int getID() {
         return this->client_ID;
     }
@@ -92,7 +68,7 @@ private:
         this->http_request = new char[1024];
     }
 
-    /*
+    
     void handle_write(const boost::system::error_code& err, size_t transferred) {
         if (!err) {
             std::cout << "MESSAGE WAS SEND" << std::endl;
@@ -102,23 +78,36 @@ private:
         }
     }
 
-    void handle_read(const boost::system::error_code& err, size_t transferred, std::string http_request) {
+    void handle_read(const boost::system::error_code& err, size_t transferred) {
+                
         if (!err) {
-            read_message();
+
+            char* to_queue = new char[1024];
+            memcpy_s(to_queue, 1024, this->http_request, 1024);
+            request_queue.push(to_queue);
+
             std::cout << "MESSAGE WAS TAKED" << std::endl;
+            std::cout << request_queue.back() << std::endl;//request_queue.back() << std::endl;
+            memset(this->http_request, 0, sizeof(this->http_request));
         }
         else {
             if (err.value() == 10054) {
                 std::cout << "CLIENT(ID:" << this->client_ID << ") disconnected" << std::endl;
+                return;
             }
             else {
                 std::cout << err.what() << std::endl;
             }
             
         }
+        read_message();
         
     }
-    */
+    
+    void process_client_message() {
+        
+    }
+    
 };
 
 class Cloud_Storage {
