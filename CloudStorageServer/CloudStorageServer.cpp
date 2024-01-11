@@ -5,16 +5,19 @@
 #include <chrono>
 #include <thread>
 #include <queue>
+#include <mutex>
 #include <Http_Builder.h>
 using boost::asio::ip::tcp;
 
-std::queue <std::string> request_queue;
+std::queue <char*> request_queue;
 
 struct Vector_Clients;
 static int client_ID_counter = 0;
 
+std::mutex g_lock;
 //Http_Builder builder;
-//Http_Parser parser;
+Http_Parser parser;
+
 
 class NEW_connection 
     : public std::enable_shared_from_this<NEW_connection>
@@ -71,7 +74,12 @@ private:
     
     void handle_write(const boost::system::error_code& err, size_t transferred) {
         if (!err) {
-            std::cout << "MESSAGE WAS SEND" << std::endl;
+            client_or_server_color("SERVER");
+            std::cout << "MESSAGE WAS SEND ";
+            client_or_server_color("CLIENT");
+            color_client_id(this->client_ID);
+            std::cout << std::endl;
+
         }
         else {
             std::cout << err.what() << std::endl;
@@ -81,17 +89,26 @@ private:
     void handle_read(const boost::system::error_code& err, size_t transferred) {
                 
         if (!err) {
-
+            //copy into queue
             char* to_queue = new char[1024];
             memcpy_s(to_queue, 1024, this->http_request, 1024);
             request_queue.push(to_queue);
-
-            std::cout << "MESSAGE WAS TAKED" << std::endl;
-            std::cout << request_queue.back() << std::endl;//request_queue.back() << std::endl;
+            
+            client_or_server_color("SERVER");
+            std::cout << "MESSAGE WAS TAKED FROM ";
+            client_or_server_color("CLIENT");
+            color_client_id(this->client_ID);
+            std::cout << std::endl << request_queue.back() << std::endl;
             memset(this->http_request, 0, sizeof(this->http_request));
+
+            //next_iterarion
+            read_message();
+            //analyze requests
+            processing_client_requests();
         }
         else {
             if (err.value() == 10054) {
+                client_or_server_color("SERVER");
                 std::cout << "CLIENT(ID:" << this->client_ID << ") disconnected" << std::endl;
                 return;
             }
@@ -100,12 +117,18 @@ private:
             }
             
         }
-        read_message();
-        
+                
     }
     
-    void process_client_message() {
-        
+    void processing_client_requests() {
+        g_lock.lock();
+        while(!request_queue.empty()) {
+            parser.setRequest(request_queue.back());
+            client_or_server_color("CLIENT");
+            std::cout << req_back_converter(parser.Parsing().type) << std::endl;
+            request_queue.pop();
+        }
+        g_lock.unlock();
     }
     
 };
@@ -135,7 +158,8 @@ private:
         if (!error) {
             new_connection->setHttp_request("CONNECTED!");
             new_connection->send_message();
-            std::cout << "[SERVER] " << "CLIENT(ID:" << new_connection->getID() << ") joined the server" << std::endl;
+            client_or_server_color("SERVER");
+            std::cout << "CLIENT(ID:" << new_connection->getID() << ") joined the server" << std::endl;
             new_connection->read_message();
             start_accept();
         }
@@ -147,23 +171,14 @@ private:
 };
 
 
-
-
-std::string make_daytime_string()
-{
-    return "YOU ARE CONNECTED!";
-}
-
-
-
-
 int main()
 { 
     
     boost::asio::io_context context;
     Cloud_Storage storage(context);
 
-    std::cout << "[SERVER] START" << std::endl;
+    client_or_server_color("SERVER");
+    std::cout << "START" << std::endl;
 
     context.run();
     
