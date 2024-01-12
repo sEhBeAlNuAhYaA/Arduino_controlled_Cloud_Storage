@@ -40,7 +40,7 @@ public:
     }
 
     void send_message() {
-        socket_.async_write_some(boost::asio::mutable_buffer(this->http_request, 1024),
+        socket_.async_write_some(boost::asio::mutable_buffer(this->http_request, strlen(this->http_request)),
             boost::bind(&NEW_connection::handle_write, shared_from_this(), 
                 boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred)); 
     }
@@ -69,6 +69,7 @@ private:
         client_ID_counter++;
         client_ID = client_ID_counter;
         this->http_request = new char[1024];
+        memset(this->http_request, '\0', 1024);
     }
 
     
@@ -93,14 +94,14 @@ private:
             char* to_queue = new char[1024];
             memcpy_s(to_queue, 1024, this->http_request, 1024);
             request_queue.push(to_queue);
-            
+            memset(this->http_request, '\0', 1024);
+  
             client_or_server_color("SERVER");
             std::cout << "MESSAGE WAS TAKED FROM ";
             client_or_server_color("CLIENT");
             color_client_id(this->client_ID);
             std::cout << std::endl << request_queue.back() << std::endl;
-            memset(this->http_request, 0, sizeof(this->http_request));
-
+            
             //next_iterarion
             read_message();
             //analyze requests

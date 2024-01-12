@@ -18,16 +18,8 @@ void color_client_id(int id) {
     std::cout << "\x1b[38;5;46m- [ID:" << id << "]\x1b[0m ";
 }
 
-enum Http_Methods {
-   GET,
-   POST,   
-   PUT,
-   DEL
-};
-
 enum requests_types {
     ArduinoInfo,
-    RegistrationCheck,
     Registration,
     Authorisation,
     SendingAFile,
@@ -40,7 +32,6 @@ enum requests_types {
 
 requests_types req_converter(std::string str_req) {
     if (str_req == "ArduinoInfo") return ArduinoInfo;
-    if (str_req == "RegistrationCheck") return RegistrationCheck;
     if (str_req == "Registration") return Registration;
     if (str_req == "Authorisation") return Authorisation;
     if (str_req == "SendingAFile") return SendingAFile;
@@ -52,7 +43,6 @@ requests_types req_converter(std::string str_req) {
 
 std::string req_back_converter(requests_types type) {
     if (type == ArduinoInfo) return "ArduinoInfo";
-    if (type == RegistrationCheck) return "RegistrationCheck";
     if (type == Registration) return "Registration";
     if (type == Authorisation) return "Authorisation";
     if (type == SendingAFile) return "SendingAFile";
@@ -71,14 +61,15 @@ public:
 
     Http_Builder() {
         this->http_builded = new char[1024];
+        memset(this->http_builded, '\0', 1024);
         this->current_length = 0;
     }
     
     void filling_an_array(std::string input_string) {
         for (int i = this->current_length; i < input_string.size() + this->current_length; i++) {
-            http_builded[i] = input_string[i - this->current_length];
+            this->http_builded[i] = input_string[i - this->current_length];
         }
-        this->current_length+=input_string.size();
+        this->current_length += input_string.size();
     }
 
     //RequestsError SendingAFile TakingAFile DeleteAFile
@@ -138,7 +129,7 @@ public:
         if (type_of_request == RequestsError) {
             return this->http_builded;
         }
-        if (type_of_request == ArduinoInfo || type_of_request == RegistrationCheck) {
+        if (type_of_request == ArduinoInfo) {
             filling_an_array("HEAD / ");
             filling_an_array(req_back_converter(type_of_request));
             filling_an_array(" HTTP / 1.1\n");
@@ -149,7 +140,7 @@ public:
             if (type_of_request == Registration || type_of_request == Authorisation) {
                 filling_an_array("PUT / ");
                 filling_an_array(req_back_converter(type_of_request));
-                filling_an_array(" HTTP / 1.1\n");
+                filling_an_array(" HTTP/1.1\n");
                 std::string login;
                 std::string password;
                 std::cout << "Enter your login: ";
@@ -184,11 +175,10 @@ public:
     }
 
     void clearBuilder() {
-        memset(this->http_builded, 0, sizeof(this->http_builded));
+        memset(this->http_builded, '\0', 1024);
         this->current_length = 0;
     }
 
-    
 };
 
 
@@ -197,7 +187,7 @@ struct parsed_request {
     std::unordered_map <std::string, std::string> keys_map;
 
     parsed_request() {
-        this->type = RegistrationCheck;
+        this->type = Registration;
         this->keys_map["Content-Type"] = "";
         this->keys_map["Content-Length"] = "";
         this->keys_map["login"] = "";
@@ -205,6 +195,7 @@ struct parsed_request {
         this->keys_map["answer"] = "";
         this->keys_map["file-name"] = "";
         this->keys_map["binary-file"] = "";
+        this->keys_map["info"] = "";
     }
 };
 
@@ -238,7 +229,50 @@ public:
             }
         }
         this->pars_req.type = req_converter(parsed_request_type);
+
+        if (this->pars_req.type == RequestsError || this->pars_req.type == ErrorFromServer) {
+            
+        }
+        if (this->pars_req.type == ArduinoInfo) {
+
+        }
+        if (this->pars_req.type == Registration || this->pars_req.type == Authorisation){
+            bool start_pars = false;
+            bool start_login = false;
+            bool start_password = false;
+            for (int i = 0; i < strlen(this->http_parsed); i++) {
+                if (this->http_parsed[i] == '{') {
+                    start_pars = true;
+                    continue;
+                }
+                if (start_pars) {
+                    if (this->http_parsed[i] == '=') {
+                        start_login = true;
+                        continue;
+                    }
+                    if (start_login) {
+                        
+                        this->pars_req.keys_map["login"] += this->http_parsed[i];
+
+                    }
+                }
+            }
+                   
+        }
+
+        if (this->pars_req.type == SendingAFile) {
+        }
+
+        if (this->pars_req.type == TakingAFile) {
+        }
+
+        if (this->pars_req.type == DeleteAFile) {
+        }
         
+        if (this->pars_req.type == RequestAnswer) {
+            
+        }
+
         return this->pars_req;
     }
     

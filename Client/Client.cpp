@@ -2,10 +2,10 @@
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
 #include <string>
+#include <fstream>
 #include "Http_Builder.h"
 
 using boost::asio::ip::tcp;
-
 
 
 class Client {
@@ -26,8 +26,8 @@ public:
         this->current_http_request = new char[1024];
     }
     //sync write
-    void write_http(char* http_request) {
-        socket_.write_some(boost::asio::mutable_buffer(http_request, 1024));
+    void write_http(char* http_req) {
+        socket_.write_some(boost::asio::mutable_buffer(http_req, strlen(http_req)));
         if (!error) { 
             client_or_server_color("CLIENT");
             std::cout << "REQUEST WAS SEND" << std::endl;
@@ -47,23 +47,64 @@ public:
         std::cout << this->current_http_request << " (size: " << len << ")" << std::endl;
     }
 
-    void setRequest(char* request) {
-        this->current_http_request = request;
+    void clearRequest() {
+        memset(this->current_http_request, '\0', 1024);
     }
 
-    void clearRequest() {
-        memset(this->current_http_request, 0, 1024);
+    char* get_Request() {
+        return this->current_http_request;
     }
 };
 
 class InterFace {
-    requests_types current_action;
-
+    requests_types previous_action;
+    Http_Builder http_builder;
+    Http_Parser http_parser;
+    Client client;
 public:
-    
-    
-    
+    InterFace(boost::asio::io_context& context)
+        :client(context), previous_action(Registration),http_builder(), http_parser(){
+        start_ping_pong();
+    }
 
+    void start_ping_pong() {
+        client.write_http(this->http_builder.Builder(this->previous_action));
+        client.read_http();
+
+        http_parser.setRequest(client.get_Request());
+        http_parser.Parsing().type;
+
+        switch (this->previous_action) {
+        case Registration: {
+            
+            break;
+        }
+        case Authorisation: {
+
+            break;
+        }
+        case RequestAnswer: {
+
+            break;
+        }
+        case TakingAFile: {
+
+            break;
+        }
+        case DeleteAFile: {
+
+            break;
+        }
+        case SendingAFile: {
+
+            break;
+        }
+        case ArduinoInfo: {
+
+            break;
+        }
+        }
+    }
 };
 
 
@@ -76,14 +117,10 @@ int main(int argc, char* argv[])
         Client client(context);
         client.read_http();
 
-        Http_Builder build;
-        //client.setRequest(build.Builder(ArduinoInfo));
-        client.write_http(build.Builder(ArduinoInfo));
-        build.clearBuilder();
-        client.write_http(build.Builder(TakingAFile,"png","popa.png"));
+              
         for (;;)
         {
-            
+          
         }
     }
     catch (std::exception& e)
