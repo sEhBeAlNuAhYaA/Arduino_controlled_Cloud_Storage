@@ -6,17 +6,6 @@
 #include <string>
 #include <unordered_map>
 
-void client_or_server_color(std::string var) {
-    if (var == "CLIENT") {
-        std::cout << "\x1b[38;5;46m-->[CLIENT]\x1b[0m ";
-    }
-    if (var == "SERVER") {
-        std::cout << "\x1b[38;5;200m-->[SERVER]\x1b[0m ";
-    }
-}
-void color_client_id(int id) {
-    std::cout << "\x1b[38;5;46m- [ID:" << id << "]\x1b[0m ";
-}
 
 enum requests_types {
     ArduinoInfo,
@@ -52,7 +41,18 @@ std::string req_back_converter(requests_types type) {
     return "RequestsError";
 }
 
+void client_or_server_color(std::string var) {
+    if (var == "CLIENT") {
+        std::cout << "\x1B[38;5;46m-->[CLIENT]\x1B[0m ";
+    }
+    if (var == "SERVER") {
+        std::cout << "\x1B[38;5;200m-->[SERVER]\x1B[0m ";
+    }
+}
 
+void color_client_id(int id) {
+    std::cout << "\x1b[38;5;46m- [ID:" << id << "]\x1b[0m ";
+}
 
 class Http_Builder {
     char* http_builded;
@@ -181,7 +181,6 @@ public:
 
 };
 
-
 struct parsed_request {
     requests_types type;
     std::unordered_map <std::string, std::string> keys_map;
@@ -199,7 +198,6 @@ struct parsed_request {
     }
 };
 
-
 class Http_Parser {
     char* http_parsed;
     parsed_request pars_req;
@@ -209,6 +207,10 @@ public:
         this->http_parsed = new char[1024];
     }
     
+    parsed_request getPars() {
+        return this->pars_req;
+    }
+
     parsed_request Parsing() {
         std::string parsed_request_type = "";
         bool is_parsed_request_type = false;
@@ -216,7 +218,7 @@ public:
         for (int i = 4; i < strlen(this->http_parsed); i++) {
             if (http_parsed[i] == ' ') continue;
             if (http_parsed[i] == '/') {
-                is_parsed_request_type = true; 
+                is_parsed_request_type = true;
                 continue;
             }
             if (http_parsed[i] == 'H') {
@@ -231,33 +233,48 @@ public:
         this->pars_req.type = req_converter(parsed_request_type);
 
         if (this->pars_req.type == RequestsError || this->pars_req.type == ErrorFromServer) {
-            
+
         }
         if (this->pars_req.type == ArduinoInfo) {
 
         }
-        if (this->pars_req.type == Registration || this->pars_req.type == Authorisation){
+        if (this->pars_req.type == Registration || this->pars_req.type == Authorisation) {
             bool start_pars = false;
             bool start_login = false;
             bool start_password = false;
+            bool it_was_login = false;
             for (int i = 0; i < strlen(this->http_parsed); i++) {
                 if (this->http_parsed[i] == '{') {
                     start_pars = true;
                     continue;
                 }
                 if (start_pars) {
-                    if (this->http_parsed[i] == '=') {
+                    if (this->http_parsed[i] == '=' && !start_password && !it_was_login) {
                         start_login = true;
                         continue;
                     }
-                    if (start_login) {
-                        
+                    if (this->http_parsed[i] == '=' && !start_login && it_was_login) {
+                        start_password = true;
+                        continue;
+                    }
+                    if (start_login && !start_password) {
+                        if (this->http_parsed[i] == '\n') {
+                            start_login = false;
+                            it_was_login = true;
+                            continue;
+                        }
                         this->pars_req.keys_map["login"] += this->http_parsed[i];
 
                     }
+                    if (start_password) {
+                        if (this->http_parsed[i] == '\n') {
+                            start_password = false;
+                            continue;
+                        }
+                        this->pars_req.keys_map["password"] += this->http_parsed[i];
+                    }
                 }
             }
-                   
         }
 
         if (this->pars_req.type == SendingAFile) {
@@ -268,9 +285,21 @@ public:
 
         if (this->pars_req.type == DeleteAFile) {
         }
-        
+
         if (this->pars_req.type == RequestAnswer) {
-            
+            bool start_pars = true;
+            for (int i = 0; i < strlen(this->http_parsed); i++){
+                if (this->http_parsed[i] == '{') {
+                    start_pars = true;
+                    continue;
+                }
+                if (this->http_parsed[i] == '}') {
+                    return this->pars_req;
+                }
+                if (start_pars) {
+                    this->pars_req.keys_map["info"] += this->http_parsed[i];
+                }
+            }
         }
 
         return this->pars_req;
@@ -282,7 +311,6 @@ public:
 
     void clearRequest() {
         memset(this->http_parsed, 0, sizeof(this->http_parsed));
-        
     }
 
 
