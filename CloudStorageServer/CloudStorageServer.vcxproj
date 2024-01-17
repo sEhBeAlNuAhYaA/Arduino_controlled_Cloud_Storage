@@ -131,9 +131,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CloudStorageServer.cpp" />
+    <ClCompile Include="Http_processing.cpp" />
+    <ClCompile Include="user_data.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Http_processing.h" />
+    <ClInclude Include="user_data.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

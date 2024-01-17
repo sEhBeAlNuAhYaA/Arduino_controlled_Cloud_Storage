@@ -3,7 +3,7 @@
 #include <boost/array.hpp>
 #include <boost/bind.hpp>
 #include <queue>
-#include <Http_Builder.h>
+//#include <Http_Builder.h>
 #include "Http_processing.h"
 
 using boost::asio::ip::tcp;
