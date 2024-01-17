@@ -3,7 +3,7 @@
 #include <boost/array.hpp>
 #include <boost/bind.hpp>
 #include <queue>
-//#include <Http_Builder.h>
+#include <Http_Builder.h>
 #include "Http_processing.h"
 
 using boost::asio::ip::tcp;
@@ -103,6 +103,9 @@ private:
             read_message();
             //analyze requests
             this->http_process.processing_client_requests();
+            this->setHttp_request(this->http_process.builder.get_HTTP());
+            this->send_message();
+            
         }
         else {
             if (err.value() == 10054) {

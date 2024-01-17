@@ -72,38 +72,46 @@ public:
         start_ping_pong();
     }
 
+    void cycle(requests_types request) {
+		client.read_http();
+		http_parser.setRequest(client.get_Request());
+        switch (this->previous_action) {
+		case Authorisation: {
+			if (this->http_parser.getPars().keys_map["info"] == "200 OK") {
+				std::cout << "you logged in" << std::endl;
+			}
+			else {
+				std::cout << std::endl << this->http_parser.getPars().keys_map["info"] << std::endl;
+			}
+			break;
+		}
+		case TakingAFile: {
+
+			break;
+		}
+		case DeleteAFile: {
+
+			break;
+		}
+		case SendingAFile: {
+
+			break;
+		}
+		case ArduinoInfo: {
+
+			break;
+		}
+        }
+        this->http_parser.clearRequest();
+    }
+
     void start_ping_pong() {
         client.read_http();
         this->http_parser.setRequest(client.get_Request());
         std::cout << this->http_parser.Parsing().keys_map["info"] << std::endl;
+        this->http_parser.clearRequest();
+        //send auth request
         client.write_http(this->http_builder.Builder(this->previous_action));
-        client.read_http();
-
-        http_parser.setRequest(client.get_Request());
-        http_parser.Parsing().type;
-
-        switch (this->previous_action) {
-        case Authorisation: {
-            
-            break;
-        }
-        case TakingAFile: {
-
-            break;
-        }
-        case DeleteAFile: {
-
-            break;
-        }
-        case SendingAFile: {
-
-            break;
-        }
-        case ArduinoInfo: {
-
-            break;
-        }
-        }
         std::cout << "pingpong end" << std::endl;
     }
 };

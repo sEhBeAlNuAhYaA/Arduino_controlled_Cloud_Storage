@@ -1,12 +1,11 @@
-#ifndef HTTP_BUILDER_H
-#define HTTP_BUILDER_H
-
+#pragma once
 #include <iostream>
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
 #include <fstream>
 #include <string>
 #include <unordered_map>
+
 
 enum requests_types {
     ArduinoInfo,
@@ -113,17 +112,17 @@ public:
 
     //answer from the server(RequestAnswer)
     char* Builder_Answer(requests_types type_of_request,std::string message) {
-		if (type_of_request == RequestAnswer) {
-			filling_an_array("HEAD / ");
-			filling_an_array(req_back_converter(type_of_request));
-			filling_an_array(" HTTP/1.1\n");
-			filling_an_array("\n{\n");
-			filling_an_array(message);
-			filling_an_array("\n}\n");
-			return this->http_builded;
-		}
-		return this->http_builded;
-	}
+        if (type_of_request == RequestAnswer) {
+            filling_an_array("HEAD / ");
+            filling_an_array(req_back_converter(type_of_request));
+            filling_an_array(" HTTP/1.1\n");
+            filling_an_array("\n{\n");
+            filling_an_array(message);
+            filling_an_array("\n}\n");
+            return this->http_builded;
+        }
+        return this->http_builded;
+    }
 
     //ArduinoInfo RegistrationCheck Registration Authorisation ErrorFromServer
     char* Builder(requests_types type_of_request) {
@@ -276,8 +275,14 @@ public:
 
     void clearRequest() {
         memset(this->http_parsed, '\0', 1024);
+        this->pars_req.keys_map["Content-Type"] = "";
+        this->pars_req.keys_map["Content-Length"] = "";
+        this->pars_req.keys_map["Content-Name"] = "";
+        this->pars_req.keys_map["login"] = "";
+        this->pars_req.keys_map["password"] = "";
+        this->pars_req.keys_map["binary-file"] = "";
+        this->pars_req.keys_map["info"] = "";
     }
 
 
 };
-#endif
