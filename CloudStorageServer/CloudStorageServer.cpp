@@ -5,10 +5,13 @@
 #include <queue>
 #include <Http_Builder.h>
 #include "Http_processing.h"
+
 using boost::asio::ip::tcp;
 
 static int client_ID_counter = 0;
 
+Http_Builder server_builder;
+Http_Parser server_parser;
 
 class NEW_connection 
     : public std::enable_shared_from_this<NEW_connection>
@@ -42,16 +45,19 @@ public:
                boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));         
     }
 
-    
     int getID() {
         return this->client_ID;
     }
 
     void setHttp_request(std::string input_string) {
-         memcpy_s(this->http_request, input_string.size(), input_string.c_str(), input_string.size());
+        memcpy_s(this->http_request, input_string.size(), input_string.c_str(), input_string.size());
+    }
+    
+private:
+    void clearRequest() {
+        memset(this->http_request, '\0', 1024);
     }
 
-private:
     NEW_connection(boost::asio::io_context& context)
         : socket_(context){
 
@@ -69,7 +75,7 @@ private:
             client_or_server_color("CLIENT");
             color_client_id(this->client_ID);
             std::cout << std::endl;
-
+            this->clearRequest();
         }
         else {
             std::cout << err.what() << std::endl;
@@ -84,7 +90,7 @@ private:
             memcpy_s(to_queue, strlen(this->http_request), this->http_request, strlen(this->http_request));
             request_queue.push(to_queue);
             //clear a http_request
-            memset(this->http_request, '\0', 1024);
+            this->clearRequest();
   
             
             client_or_server_color("SERVER");
@@ -141,7 +147,7 @@ private:
 
     void handle_accept(NEW_connection::pointer new_connection, const boost::system::error_code& error) {
         if (!error) {
-            new_connection->setHttp_request("CONNECTED!");
+            new_connection->setHttp_request(server_builder.Builder_Answer(RequestAnswer, "YOU ARE CONNECTED!"));
             new_connection->send_message();
             client_or_server_color("SERVER");
             std::cout << "CLIENT(ID:" << new_connection->getID() << ") joined the server" << std::endl;

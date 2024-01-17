@@ -22,10 +22,10 @@ public:
     //constructor
     Client(boost::asio::io_context& context)
         : context_(context), resolver_(context), socket_(context), endpoints_(resolver_.resolve("127.0.0.1", "80")) {
+
         boost::asio::connect(socket_, endpoints_);
         this->current_http_request = new char[1024];
         memset(this->current_http_request, '\0', 1024);
-        
     }
     //sync write
     void write_http(char* http_req) {
@@ -48,7 +48,7 @@ public:
         
         memset(reinterpret_cast<void*>(this->current_http_request + len), '\0', 1024 - len);
         client_or_server_color("SERVER");
-        std::cout << this->current_http_request << " (size: " << len << ")" << std::endl;
+        //std::cout << this->current_http_request << " (size: " << len << ")" << std::endl;
         
     }
 
@@ -61,19 +61,21 @@ public:
     }
 };
 
-class InterFace {
+class ClientInit {
     requests_types previous_action;
     Http_Builder http_builder;
     Http_Parser http_parser;
     Client client;
 public:
-    InterFace(boost::asio::io_context& context)
-        :client(context), previous_action(Registration),http_builder(), http_parser(){
+    ClientInit(boost::asio::io_context& context)
+        :client(context), previous_action(Authorisation),http_builder(), http_parser(){
         start_ping_pong();
     }
 
     void start_ping_pong() {
         client.read_http();
+        this->http_parser.setRequest(client.get_Request());
+        std::cout << this->http_parser.Parsing().keys_map["info"] << std::endl;
         client.write_http(this->http_builder.Builder(this->previous_action));
         client.read_http();
 
@@ -81,16 +83,8 @@ public:
         http_parser.Parsing().type;
 
         switch (this->previous_action) {
-        case Registration: {
-            
-            break;
-        }
         case Authorisation: {
-
-            break;
-        }
-        case RequestAnswer: {
-
+            
             break;
         }
         case TakingAFile: {
@@ -121,7 +115,7 @@ int main(int argc, char* argv[])
     {
         //init context and create client class object
         boost::asio::io_context context;
-        InterFace interface(context);
+        ClientInit interface(context);
         for (;;)
         {
           

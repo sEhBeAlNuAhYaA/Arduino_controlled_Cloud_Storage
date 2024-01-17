@@ -9,7 +9,6 @@
 
 enum requests_types {
     ArduinoInfo,
-    Registration,
     Authorisation,
     SendingAFile,
     TakingAFile,
@@ -21,7 +20,6 @@ enum requests_types {
 
 requests_types req_converter(std::string str_req) {
     if (str_req == "ArduinoInfo") return ArduinoInfo;
-    if (str_req == "Registration") return Registration;
     if (str_req == "Authorisation") return Authorisation;
     if (str_req == "SendingAFile") return SendingAFile;
     if (str_req == "TakingAFile") return TakingAFile;
@@ -32,7 +30,6 @@ requests_types req_converter(std::string str_req) {
 
 std::string req_back_converter(requests_types type) {
     if (type == ArduinoInfo) return "ArduinoInfo";
-    if (type == Registration) return "Registration";
     if (type == Authorisation) return "Authorisation";
     if (type == SendingAFile) return "SendingAFile";
     if (type == TakingAFile) return "TakingAFile";
@@ -81,29 +78,32 @@ public:
             if (type_of_request == SendingAFile) {
                 filling_an_array("POST / ");
                 filling_an_array(req_back_converter(type_of_request));
-                filling_an_array(" HTTP / 1.1\n");
+                filling_an_array(" HTTP/1.1\n");
                 filling_an_array("Content-Type: ");
                 filling_an_array(type_of_file);
                 filling_an_array("\nContent-Length: ");
-                filling_an_array("*type*\n");
-                filling_an_array("\n{\n binary body fo the file");
-                filling_an_array("\n}");
+                filling_an_array("*length*");
+                filling_an_array("\nContent-Name: ");
+                filling_an_array(direction);
+                filling_an_array("\n\n{\n binary body fo the file");
+                filling_an_array("\n}\n");
                 return this->http_builded;
             }
 
             if (type_of_request == TakingAFile) {
                 filling_an_array("GET / ");
                 filling_an_array(req_back_converter(type_of_request));
-                filling_an_array(" HTTP / 1.1\n");
-                filling_an_array("\n{\n file name or directory");
-                filling_an_array("\n}");
+                filling_an_array(" HTTP/1.1\n");
+                filling_an_array("Content-Name: ");
+                filling_an_array(direction);
+                filling_an_array("\n\n");
                 return this->http_builded;
             }
 
             if (type_of_request == DeleteAFile) {
                 filling_an_array("DELETE / ");
                 filling_an_array(req_back_converter(type_of_request));
-                filling_an_array(" HTTP / 1.1\n");
+                filling_an_array(" HTTP/1.1\n");
                 return this->http_builded;
             }
         }
@@ -115,10 +115,10 @@ public:
         if (type_of_request == RequestAnswer) {
             filling_an_array("HEAD / ");
             filling_an_array(req_back_converter(type_of_request));
-            filling_an_array(" HTTP / 1.1\n");
+            filling_an_array(" HTTP/1.1\n");
             filling_an_array("\n{\n");
             filling_an_array(message);
-            filling_an_array("\n}");
+            filling_an_array("\n}\n");
             return this->http_builded;
         }
         return this->http_builded;
@@ -132,12 +132,11 @@ public:
         if (type_of_request == ArduinoInfo) {
             filling_an_array("HEAD / ");
             filling_an_array(req_back_converter(type_of_request));
-            filling_an_array(" HTTP / 1.1\n");
+            filling_an_array(" HTTP/1.1\n");
             return this->http_builded;
         }
-        if (type_of_request == Registration || type_of_request == Authorisation 
-                                            || type_of_request == ErrorFromServer) {
-            if (type_of_request == Registration || type_of_request == Authorisation) {
+        if (type_of_request == Authorisation || type_of_request == ErrorFromServer) {
+            if (type_of_request == Authorisation) {
                 filling_an_array("PUT / ");
                 filling_an_array(req_back_converter(type_of_request));
                 filling_an_array(" HTTP/1.1\n");
@@ -151,17 +150,16 @@ public:
                 filling_an_array(login);
                 filling_an_array("\npassword=");
                 filling_an_array(password);
-                filling_an_array("\n}");
+                filling_an_array("\n}\n");
                 return this->http_builded;
             }
 
             if (type_of_request == ErrorFromServer) {
                 filling_an_array("PUT / ");
                 filling_an_array(req_back_converter(type_of_request));
-                filling_an_array(" HTTP / 1.1\n");
+                filling_an_array(" HTTP/1.1\n");
                 return this->http_builded;
             }
-           
         }
         return this->http_builded;
     }
@@ -186,13 +184,12 @@ struct parsed_request {
     std::unordered_map <std::string, std::string> keys_map;
 
     parsed_request() {
-        this->type = Registration;
+        this->type = Authorisation;
         this->keys_map["Content-Type"] = "";
         this->keys_map["Content-Length"] = "";
+        this->keys_map["Content-Name"] = "";
         this->keys_map["login"] = "";
         this->keys_map["password"] = "";
-        this->keys_map["answer"] = "";
-        this->keys_map["file-name"] = "";
         this->keys_map["binary-file"] = "";
         this->keys_map["info"] = "";
     }
@@ -207,6 +204,16 @@ public:
         this->http_parsed = new char[1024];
     }
     
+    void Extract_parts(const char* search_start, const char end_char, const char* map_position) {
+        int login_poz = strstr(this->http_parsed, search_start) - this->http_parsed + strlen(search_start);
+        for (int i = login_poz; i < strlen(this->http_parsed); i++) {
+            if (this->http_parsed[i] == end_char) {
+                break;
+            }
+            this->pars_req.keys_map[map_position] += this->http_parsed[i];
+        }
+    }
+
     parsed_request getPars() {
         return this->pars_req;
     }
@@ -232,76 +239,33 @@ public:
         }
         this->pars_req.type = req_converter(parsed_request_type);
 
-        if (this->pars_req.type == RequestsError || this->pars_req.type == ErrorFromServer) {
-
+        if (this->pars_req.type == Authorisation) {
+            this->Extract_parts("login=", '\n', "login");
+            this->Extract_parts("password=", '\n', "password");
+            return this->pars_req;
         }
-        if (this->pars_req.type == ArduinoInfo) {
-
-        }
-        if (this->pars_req.type == Registration || this->pars_req.type == Authorisation) {
-            bool start_pars = false;
-            bool start_login = false;
-            bool start_password = false;
-            bool it_was_login = false;
-            for (int i = 0; i < strlen(this->http_parsed); i++) {
-                if (this->http_parsed[i] == '{') {
-                    start_pars = true;
-                    continue;
-                }
-                if (start_pars) {
-                    if (this->http_parsed[i] == '=' && !start_password && !it_was_login) {
-                        start_login = true;
-                        continue;
-                    }
-                    if (this->http_parsed[i] == '=' && !start_login && it_was_login) {
-                        start_password = true;
-                        continue;
-                    }
-                    if (start_login && !start_password) {
-                        if (this->http_parsed[i] == '\n') {
-                            start_login = false;
-                            it_was_login = true;
-                            continue;
-                        }
-                        this->pars_req.keys_map["login"] += this->http_parsed[i];
-
-                    }
-                    if (start_password) {
-                        if (this->http_parsed[i] == '\n') {
-                            start_password = false;
-                            continue;
-                        }
-                        this->pars_req.keys_map["password"] += this->http_parsed[i];
-                    }
-                }
-            }
-        }
-
+        
         if (this->pars_req.type == SendingAFile) {
+            this->Extract_parts("Content-Type: ", '\n', "Content-Type");
+            this->Extract_parts("Content-Length: ", '\n', "Content-Length");
+            this->Extract_parts("Content-Name: ", '\n', "Content-Name");
+            return this->pars_req;
         }
 
         if (this->pars_req.type == TakingAFile) {
+            this->Extract_parts("Content-Name: ", '\n', "Content-Name");
+            return this->pars_req;
         }
 
         if (this->pars_req.type == DeleteAFile) {
+            this->Extract_parts("Content-Name: ", '\n', "Content-Name");
+            return this->pars_req;
         }
 
-        if (this->pars_req.type == RequestAnswer) {
-            bool start_pars = true;
-            for (int i = 0; i < strlen(this->http_parsed); i++){
-                if (this->http_parsed[i] == '{') {
-                    start_pars = true;
-                    continue;
-                }
-                if (this->http_parsed[i] == '}') {
-                    return this->pars_req;
-                }
-                if (start_pars) {
-                    this->pars_req.keys_map["info"] += this->http_parsed[i];
-                }
-            }
+        if (this->pars_req.type == RequestAnswer) { 
+            this->Extract_parts("{\n", '\n', "info");
+            return this->pars_req;   
         }
-
         return this->pars_req;
     }
     
@@ -310,7 +274,7 @@ public:
     }
 
     void clearRequest() {
-        memset(this->http_parsed, 0, sizeof(this->http_parsed));
+        memset(this->http_parsed, '\0', 1024);
     }
 
 
