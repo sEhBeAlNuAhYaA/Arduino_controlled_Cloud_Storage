@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 
+
 enum requests_types {
     ArduinoInfo,
     Authorisation,
@@ -25,6 +26,7 @@ requests_types req_converter(std::string str_req) {
     if (str_req == "TakingAFile") return TakingAFile;
     if (str_req == "ErrorFromServer") return ErrorFromServer;
     if (str_req == "RequestAnswer") return RequestAnswer;
+    if (str_req == "DeleteAFile") return DeleteAFile;
     return RequestsError;
 }
 
@@ -35,6 +37,7 @@ std::string req_back_converter(requests_types type) {
     if (type == TakingAFile) return "TakingAFile";
     if (type == ErrorFromServer) return "ErrorFromServer";
     if (type == RequestAnswer) return "RequestAnswer";
+    if (type == DeleteAFile) return "DeleteAFile";
     return "RequestsError";
 }
 
@@ -104,6 +107,9 @@ public:
                 filling_an_array("DELETE / ");
                 filling_an_array(req_back_converter(type_of_request));
                 filling_an_array(" HTTP/1.1\n");
+                filling_an_array("Content-Name: ");
+                filling_an_array(direction);
+                filling_an_array("\n\n");
                 return this->http_builded;
             }
         }
@@ -124,7 +130,19 @@ public:
         return this->http_builded;
     }
 
-    //ArduinoInfo RegistrationCheck Registration Authorisation ErrorFromServer
+    char* Authentification(std::string login, std::string password) {
+		filling_an_array("PUT / ");
+		filling_an_array(req_back_converter(Authorisation));
+		filling_an_array(" HTTP/1.1\n");
+		filling_an_array("\n{\nlogin=");
+		filling_an_array(login);
+		filling_an_array("\npassword=");
+		filling_an_array(password);
+		filling_an_array("\n}\n");
+		return this->http_builded;
+    }
+
+
     char* Builder(requests_types type_of_request) {
         if (type_of_request == RequestsError) {
             return this->http_builded;
@@ -136,24 +154,6 @@ public:
             return this->http_builded;
         }
         if (type_of_request == Authorisation || type_of_request == ErrorFromServer) {
-            if (type_of_request == Authorisation) {
-                filling_an_array("PUT / ");
-                filling_an_array(req_back_converter(type_of_request));
-                filling_an_array(" HTTP/1.1\n");
-                std::string login;
-                std::string password;
-                std::cout << "Enter your login: ";
-                std::cin >> login;
-                std::cout << "Enter your password: ";
-                std::cin >> password;
-                filling_an_array("\n{\nlogin=");
-                filling_an_array(login);
-                filling_an_array("\npassword=");
-                filling_an_array(password);
-                filling_an_array("\n}\n");
-                return this->http_builded;
-            }
-
             if (type_of_request == ErrorFromServer) {
                 filling_an_array("PUT / ");
                 filling_an_array(req_back_converter(type_of_request));

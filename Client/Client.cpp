@@ -3,8 +3,9 @@
 #include <boost/asio.hpp>
 #include <string>
 #include <fstream>
-#include "Http_Builder.h"
-
+#include <Http_Builder.h>
+#include <boost/beast/core/detail/base64.hpp>
+#include "bcrypt.h"
 using boost::asio::ip::tcp;
 
 
@@ -16,8 +17,6 @@ class Client {
     tcp::resolver::results_type endpoints_;
     char* current_http_request;
     boost::system::error_code error;
-    
-
 public:
     //constructor
     Client(boost::asio::io_context& context)
@@ -55,54 +54,98 @@ public:
     void clearRequest() {
         memset(this->current_http_request, '\0', 1024);
     }
-
+    
     char* get_Request() {
         return this->current_http_request;
     }
 };
-
 class ClientInit {
     requests_types previous_action;
     Http_Builder http_builder;
     Http_Parser http_parser;
     Client client;
+    
 public:
     ClientInit(boost::asio::io_context& context)
         :client(context), previous_action(Authorisation),http_builder(), http_parser(){
         start_ping_pong();
+        
     }
 
-    void cycle(requests_types request) {
-		client.read_http();
-		http_parser.setRequest(client.get_Request());
-        switch (this->previous_action) {
-		case Authorisation: {
-			if (this->http_parser.getPars().keys_map["info"] == "200 OK") {
-				std::cout << "you logged in" << std::endl;
+	void cycle() {
+		try {
+			int input;
+			std::string login;
+			std::string password;
+			std::cin >> login;
+			std::cin >> password;
+			this->client.write_http(this->http_builder.Authentification(login, password));
+			this->http_builder.clearBuilder();
+			this->client.read_http();
+			this->http_parser.setRequest(this->client.get_Request());
+			this->http_parser.Parsing();
+			while (true) {
+				std::cout << this->http_parser.getPars().keys_map["info"] << std::endl;
+				if (this->http_parser.getPars().keys_map["info"] == "200 OK") {
+					this->http_builder.clearBuilder();
+					this->http_parser.clearRequest();
+					break;
+				}
+				this->http_parser.clearRequest();
+				std::string login;
+				std::string password;
+				std::cin >> login;
+				std::cin >> password;
+				this->client.write_http(this->http_builder.Authentification(login, password));
+				this->http_builder.clearBuilder();
+				this->client.read_http();
+				this->http_parser.setRequest(this->client.get_Request());
+				this->http_parser.Parsing();
 			}
-			else {
-				std::cout << std::endl << this->http_parser.getPars().keys_map["info"] << std::endl;
+
+			while (true) {
+                
+
+				std::cout << "1. send file;\n2. take file;\n3. delete file;\n4. check storage size;\ninput: " << std::endl;
+				std::cin >> input;
+				switch (input) {
+				case 1: {
+					this->client.write_http(this->http_builder.Builder(SendingAFile, "png", "image.png"));
+					this->http_builder.clearBuilder();
+					break;
+				}
+				case 2: {
+                    this->client.write_http(this->http_builder.Builder(TakingAFile, "", "image.png"));
+                    this->http_builder.clearBuilder();
+                    break;
+				}
+				case 3: {
+                    this->client.write_http(this->http_builder.Builder(DeleteAFile, "", "image.png"));
+                    this->http_builder.clearBuilder();
+					break;
+				}
+				case 4: {
+                    this->client.write_http(this->http_builder.Builder(ArduinoInfo));
+                    this->http_builder.clearBuilder();
+					break;
+				}
+				}
+
+                this->client.read_http();
+                this->http_parser.setRequest(this->client.get_Request());
+                this->client.clearRequest();
+                this->http_parser.Parsing();
+                std::cout << this->http_parser.getPars().keys_map["info"] << std::endl;
+                this->http_parser.clearRequest();
+                std::cout << "\x1b[2J\x1b[H";
+
 			}
-			break;
-		}
-		case TakingAFile: {
-
-			break;
-		}
-		case DeleteAFile: {
-
-			break;
-		}
-		case SendingAFile: {
-
-			break;
-		}
-		case ArduinoInfo: {
-
-			break;
-		}
         }
-        this->http_parser.clearRequest();
+        catch (std::system_error& error) {
+            std::cout << error.what() << std::endl;
+            return;
+        }
+
     }
 
     void start_ping_pong() {
@@ -110,15 +153,14 @@ public:
         this->http_parser.setRequest(client.get_Request());
         std::cout << this->http_parser.Parsing().keys_map["info"] << std::endl;
         this->http_parser.clearRequest();
-        //send auth request
-        client.write_http(this->http_builder.Builder(this->previous_action));
+        this->cycle();
         std::cout << "pingpong end" << std::endl;
     }
 };
 
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]){
+
     try
     {
         //init context and create client class object

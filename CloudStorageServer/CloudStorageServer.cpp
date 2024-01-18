@@ -87,8 +87,10 @@ private:
         if (!err) {
             //copy into queue
             char* to_queue = new char[1024];
+            memset(to_queue, '\0', 1024);
             memcpy_s(to_queue, strlen(this->http_request), this->http_request, strlen(this->http_request));
             request_queue.push(to_queue);
+            
             //clear a http_request
             this->clearRequest();
   
@@ -97,14 +99,18 @@ private:
             std::cout << "MESSAGE WAS RECEIVED FROM ";
             client_or_server_color("CLIENT");
             color_client_id(this->client_ID);
-            std::cout << std::endl << request_queue.back() << std::endl;
+            printf("\n%s\n", request_queue.back());
+            std::cout << strlen(request_queue.back()) << std::endl;
+            
             
             //next_iterarion
             read_message();
             //analyze requests
             this->http_process.processing_client_requests();
             this->setHttp_request(this->http_process.builder.get_HTTP());
+            this->http_process.builder.clearBuilder();
             this->send_message();
+            
             
         }
         else {
@@ -151,6 +157,7 @@ private:
     void handle_accept(NEW_connection::pointer new_connection, const boost::system::error_code& error) {
         if (!error) {
             new_connection->setHttp_request(server_builder.Builder_Answer(RequestAnswer, "YOU ARE CONNECTED!"));
+            server_builder.clearBuilder();
             new_connection->send_message();
             client_or_server_color("SERVER");
             std::cout << "CLIENT(ID:" << new_connection->getID() << ") joined the server" << std::endl;
