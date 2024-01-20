@@ -1,6 +1,7 @@
 #include "Http_processing.h"
 
 http_processing::http_processing() {
+	this->file_sender = new File_Sender("image.jpg");
 	this->userdata = new user_data("db.txt");
 }
 

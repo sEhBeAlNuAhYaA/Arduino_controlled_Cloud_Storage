@@ -186,6 +186,7 @@ struct parsed_request {
         this->keys_map["Content-Type"] = "";
         this->keys_map["Content-Length"] = "";
         this->keys_map["Content-Name"] = "";
+        this->keys_map["state"] = "";
         this->keys_map["login"] = "";
         this->keys_map["password"] = "";
         this->keys_map["binary-file"] = "";
@@ -247,6 +248,7 @@ public:
             this->Extract_parts("Content-Type: ", '\n', "Content-Type");
             this->Extract_parts("Content-Length: ", '\n', "Content-Length");
             this->Extract_parts("Content-Name: ", '\n', "Content-Name");
+            this->Extract_parts("state: ", '\n', "state");
             return this->pars_req;
         }
 

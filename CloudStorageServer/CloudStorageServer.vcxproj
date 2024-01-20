@@ -71,7 +71,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);F:\TRAINEE\Arduino_controlled_Cloud_Storage\BOO;F:\TRAINEE\Arduino_controlled_Cloud_Storage\HTTP_BUILDER</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);F:\TRAINEE\Arduino_controlled_Cloud_Storage\BOO;F:\TRAINEE\Arduino_controlled_Cloud_Storage\HTTP_BUILDER;F:\TRAINEE\Arduino_controlled_Cloud_Storage\File_Sender</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
