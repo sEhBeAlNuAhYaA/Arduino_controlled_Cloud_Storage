@@ -8,6 +8,7 @@
 
 using boost::asio::ip::tcp;
 
+static std::queue <char*> request_queue;
 static int client_ID_counter = 0;
 
 Http_Builder server_builder;
@@ -106,7 +107,7 @@ private:
             //next_iterarion
             read_message();
             //analyze requests
-            this->http_process.processing_client_requests();
+            this->http_process.processing_client_requests(request_queue);
             this->setHttp_request(this->http_process.builder.get_HTTP());
             this->http_process.builder.clearBuilder();
             this->send_message();

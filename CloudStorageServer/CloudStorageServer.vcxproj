@@ -133,12 +133,15 @@
     <ClCompile Include="bcrypt.cpp" />
     <ClCompile Include="blowfish.cpp" />
     <ClCompile Include="CloudStorageServer.cpp" />
+    <ClCompile Include="Http_processing.cpp" />
+    <ClCompile Include="user_data.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bcrypt.h" />
     <ClInclude Include="Http_processing.h" />
     <ClInclude Include="node_blf.h" />
     <ClInclude Include="openbsd.h" />
+    <ClInclude Include="user_data.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="db.txt" />

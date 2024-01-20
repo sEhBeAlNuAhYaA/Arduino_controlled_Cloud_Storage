@@ -24,6 +24,12 @@
     <ClCompile Include="blowfish.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="Http_processing.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="user_data.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Http_processing.h">
@@ -36,6 +42,9 @@
       <Filter>Исходные файлы</Filter>
     </ClInclude>
     <ClInclude Include="bcrypt.h">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="user_data.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
   </ItemGroup>

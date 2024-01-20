@@ -132,10 +132,12 @@
   <ItemGroup>
     <ClCompile Include="bcrypt.cpp" />
     <ClCompile Include="blowfish.cpp" />
+    <ClCompile Include="ClentInit.cpp" />
     <ClCompile Include="Client.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bcrypt.h" />
+    <ClInclude Include="Client.h" />
     <ClInclude Include="node_blf.h" />
     <ClInclude Include="openbsd.h" />
   </ItemGroup>

@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <fstream>
+#include "bcrypt.h"
 
 class user_data {
     std::fstream db;

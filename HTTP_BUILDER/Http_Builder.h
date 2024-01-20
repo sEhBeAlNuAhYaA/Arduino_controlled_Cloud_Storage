@@ -2,11 +2,9 @@
 #include <iostream>
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
-#include <fstream>
+#include<fstream>
 #include <string>
 #include <unordered_map>
-
-
 
 enum requests_types {
     ArduinoInfo,
@@ -19,7 +17,7 @@ enum requests_types {
     RequestAnswer
 };
 
-requests_types req_converter(std::string str_req) {
+inline requests_types req_converter(std::string str_req) {
     if (str_req == "ArduinoInfo") return ArduinoInfo;
     if (str_req == "Authorisation") return Authorisation;
     if (str_req == "SendingAFile") return SendingAFile;
@@ -30,7 +28,7 @@ requests_types req_converter(std::string str_req) {
     return RequestsError;
 }
 
-std::string req_back_converter(requests_types type) {
+inline std::string req_back_converter(requests_types type) {
     if (type == ArduinoInfo) return "ArduinoInfo";
     if (type == Authorisation) return "Authorisation";
     if (type == SendingAFile) return "SendingAFile";
@@ -41,7 +39,7 @@ std::string req_back_converter(requests_types type) {
     return "RequestsError";
 }
 
-void client_or_server_color(std::string var) {
+inline void client_or_server_color(std::string var) {
     if (var == "CLIENT") {
         std::cout << "\x1B[38;5;46m-->[CLIENT]\x1B[0m ";
     }
@@ -50,7 +48,7 @@ void client_or_server_color(std::string var) {
     }
 }
 
-void color_client_id(int id) {
+inline void color_client_id(int id) {
     std::cout << "\x1b[38;5;46m- [ID:" << id << "]\x1b[0m ";
 }
 
