@@ -6,6 +6,8 @@
 #include <Http_Builder.h>
 #include "Http_processing.h"
 
+int BUFFER = 10000;
+
 using boost::asio::ip::tcp;
 
 static std::queue <char*> request_queue;
@@ -35,13 +37,13 @@ public:
     }
 
     void send_message(){
-        socket_.async_write_some(boost::asio::mutable_buffer(this->http_request, strlen(this->http_request)),
+        socket_.async_write_some(boost::asio::mutable_buffer(this->http_request, BUFFER),
             boost::bind(&NEW_connection::handle_write, shared_from_this(), 
                 boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred)); 
     }
 
     void read_message() {
-        socket_.async_read_some(boost::asio::mutable_buffer(this->http_request, 1024),
+        socket_.async_read_some(boost::asio::mutable_buffer(this->http_request, BUFFER),
             boost::bind(&NEW_connection::handle_read, shared_from_this(),
                boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));         
     }
@@ -50,13 +52,13 @@ public:
         return this->client_ID;
     }
 
-    void setHttp_request(std::string input_string) {
-        memcpy_s(this->http_request, input_string.size(), input_string.c_str(), input_string.size());
+    void setHttp_request(char* input_message) {
+        memcpy_s(this->http_request, BUFFER, input_message, BUFFER);
     }
     
 private:
     void clearRequest() {
-        memset(this->http_request, '\0', 1024);
+        memset(this->http_request, '\0', BUFFER);
     }
 
     NEW_connection(boost::asio::io_context& context)
@@ -64,8 +66,8 @@ private:
 
         client_ID_counter++;
         client_ID = client_ID_counter;
-        this->http_request = new char[1024];
-        memset(this->http_request, '\0', 1024);
+        this->http_request = new char[BUFFER];
+        memset(this->http_request, '\0', BUFFER);
     }
 
     
@@ -73,10 +75,10 @@ private:
         if (!err) {
             client_or_server_color("SERVER");
             std::cout << "MESSAGE WAS SENT ";
-            client_or_server_color("CLIENT");
-            color_client_id(this->client_ID);
+			client_or_server_color("CLIENT");
+			color_client_id(this->client_ID);
             std::cout << std::endl;
-            this->clearRequest();
+			this->clearRequest();
         }
         else {
             std::cout << err.what() << std::endl;
@@ -87,8 +89,8 @@ private:
                 
         if (!err) {
             //copy into queue
-            char* to_queue = new char[1024];
-            memset(to_queue, '\0', 1024);
+            char* to_queue = new char[BUFFER];
+            memset(to_queue, '\0', BUFFER);
             memcpy_s(to_queue, strlen(this->http_request), this->http_request, strlen(this->http_request));
             request_queue.push(to_queue);
             
@@ -100,8 +102,9 @@ private:
             std::cout << "MESSAGE WAS RECEIVED FROM ";
             client_or_server_color("CLIENT");
             color_client_id(this->client_ID);
-            printf("\n%s\n", request_queue.back());
-            std::cout << strlen(request_queue.back()) << std::endl;
+            std::cout << "\n";
+            //printf("\n%s\n", request_queue.back());
+            //std::cout << strlen(request_queue.back()) << std::endl;
             
             
             //next_iterarion
@@ -111,8 +114,7 @@ private:
             this->setHttp_request(this->http_process.builder.get_HTTP());
             this->http_process.builder.clearBuilder();
             this->send_message();
-            
-            
+   
         }
         else {
             if (err.value() == 10054) {
@@ -157,9 +159,10 @@ private:
 
     void handle_accept(NEW_connection::pointer new_connection, const boost::system::error_code& error) {
         if (!error) {
+            //new_connection->setHttp_request(server_builder.Builder_Answer(RequestAnswer, "YOU ARE CONNECTED!"));
             new_connection->setHttp_request(server_builder.Builder_Answer(RequestAnswer, "YOU ARE CONNECTED!"));
-            server_builder.clearBuilder();
             new_connection->send_message();
+            server_builder.clearBuilder();
             client_or_server_color("SERVER");
             std::cout << "CLIENT(ID:" << new_connection->getID() << ") joined the server" << std::endl;
             new_connection->read_message();

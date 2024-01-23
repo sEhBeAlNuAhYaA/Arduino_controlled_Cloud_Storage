@@ -6,6 +6,8 @@
 #include <string>
 #include <unordered_map>
 
+static int HTTP_BUFFER = 10000;
+
 enum requests_types {
     ArduinoInfo,
     Authorisation,
@@ -58,8 +60,8 @@ class Http_Builder {
 public:
 
     Http_Builder() {
-        this->http_builded = new char[1024];
-        memset(this->http_builded, '\0', 1024);
+        this->http_builded = new char[HTTP_BUFFER];
+        memset(this->http_builded, '\0', HTTP_BUFFER);
         this->current_length = 0;
     }
     
@@ -70,27 +72,36 @@ public:
         this->current_length += input_string.size();
     }
 
+    void binary_insert(char* binary) {
+        for (int i = this->current_length; i < 9850 + this->current_length; i++) {
+            this->http_builded[i] = binary[i - this->current_length];
+        }
+        this->current_length += 9850;
+    }
+
     //RequestsError SendingAFile TakingAFile DeleteAFile
-    char* Builder(requests_types type_of_request, std::string type_of_file, std::string direction) {
+    char* Sending_A_File(std::string name, std::string part, int size, char* binary_file) {
+		filling_an_array("POST / ");
+		filling_an_array(req_back_converter(SendingAFile));
+		filling_an_array(" HTTP/1.1\n");
+		filling_an_array("\nContent-Name: ");
+		filling_an_array(name);
+        filling_an_array("\nContent-Length: ");
+        filling_an_array(std::to_string(size));
+		filling_an_array("\nPart-File: ");
+		filling_an_array(part);
+		filling_an_array("\n\n{\n");
+		binary_insert(binary_file);
+		filling_an_array("\n}\n");
+		return this->http_builded;
+    }
+
+    char* Builder(requests_types type_of_request, char* binary_file, std::string direction, std::string part) {
         if (type_of_request == RequestsError) {
             return this->http_builded;
         }
         if (type_of_request == SendingAFile || type_of_request == TakingAFile || type_of_request == DeleteAFile) {
-            if (type_of_request == SendingAFile) {
-                filling_an_array("POST / ");
-                filling_an_array(req_back_converter(type_of_request));
-                filling_an_array(" HTTP/1.1\n");
-                filling_an_array("Content-Type: ");
-                filling_an_array(type_of_file);
-                filling_an_array("\nContent-Length: ");
-                filling_an_array("*length*");
-                filling_an_array("\nContent-Name: ");
-                filling_an_array(direction);
-                filling_an_array("\n\n{\n binary body fo the file");
-                filling_an_array("\n}\n");
-                return this->http_builded;
-            }
-
+            
             if (type_of_request == TakingAFile) {
                 filling_an_array("GET / ");
                 filling_an_array(req_back_converter(type_of_request));
@@ -139,7 +150,7 @@ public:
 		filling_an_array("\n}\n");
 		return this->http_builded;
     }
-
+    
 
     char* Builder(requests_types type_of_request) {
         if (type_of_request == RequestsError) {
@@ -171,26 +182,28 @@ public:
     }
 
     void clearBuilder() {
-        memset(this->http_builded, '\0', 1024);
+        memset(this->http_builded, '\0', HTTP_BUFFER);
         this->current_length = 0;
     }
 
 };
-
+//parsed struct 
 struct parsed_request {
     requests_types type;
     std::unordered_map <std::string, std::string> keys_map;
+    char* binary_part;
 
     parsed_request() {
+        this->binary_part = new char[9850];
         this->type = Authorisation;
-        this->keys_map["Content-Type"] = "";
-        this->keys_map["Content-Length"] = "";
         this->keys_map["Content-Name"] = "";
-        this->keys_map["state"] = "";
+        this->keys_map["Content-Length"] = "";
+        this->keys_map["Part-File"] = "";
         this->keys_map["login"] = "";
         this->keys_map["password"] = "";
         this->keys_map["binary-file"] = "";
         this->keys_map["info"] = "";
+        
     }
 };
 
@@ -200,7 +213,7 @@ class Http_Parser {
 public:
 
     Http_Parser() {
-        this->http_parsed = new char[1024];
+        this->http_parsed = new char[HTTP_BUFFER];
     }
     
     void Extract_parts(const char* search_start, const char end_char, const char* map_position) {
@@ -210,6 +223,19 @@ public:
                 break;
             }
             this->pars_req.keys_map[map_position] += this->http_parsed[i];
+        }
+    }
+
+    int find_end_of_binary() {
+        for (int i = HTTP_BUFFER; i > 0; i--) {
+            if (this->http_parsed[i] == '}') return i;
+        }
+    }
+
+    void Extract_Binary(const char* search_start) {
+        int login_poz = strstr(this->http_parsed, search_start) - this->http_parsed + strlen(search_start);
+        for (int i = login_poz; i < find_end_of_binary(); i++) {
+            this->pars_req.binary_part[i - login_poz] = this->http_parsed[i];
         }
     }
 
@@ -245,10 +271,10 @@ public:
         }
         
         if (this->pars_req.type == SendingAFile) {
-            this->Extract_parts("Content-Type: ", '\n', "Content-Type");
-            this->Extract_parts("Content-Length: ", '\n', "Content-Length");
             this->Extract_parts("Content-Name: ", '\n', "Content-Name");
-            this->Extract_parts("state: ", '\n', "state");
+            this->Extract_parts("Content-Length: ", '\n', "Content-Length");
+            this->Extract_parts("Part-File: ", '\n', "Part-File");
+            this->Extract_Binary("{\n");
             return this->pars_req;
         }
 
@@ -270,14 +296,14 @@ public:
     }
     
     void setRequest(char* http_parsed) {
-        memcpy_s(this->http_parsed, 1024, http_parsed, 1024);
+        memcpy_s(this->http_parsed, HTTP_BUFFER, http_parsed, HTTP_BUFFER);
     }
 
     void clearRequest() {
-        memset(this->http_parsed, '\0', 1024);
-        this->pars_req.keys_map["Content-Type"] = "";
-        this->pars_req.keys_map["Content-Length"] = "";
+        memset(this->http_parsed, '\0', HTTP_BUFFER);
         this->pars_req.keys_map["Content-Name"] = "";
+        this->pars_req.keys_map["Content-Length"] = "";
+        this->pars_req.keys_map["Part-File"] = "";
         this->pars_req.keys_map["login"] = "";
         this->pars_req.keys_map["password"] = "";
         this->pars_req.keys_map["binary-file"] = "";

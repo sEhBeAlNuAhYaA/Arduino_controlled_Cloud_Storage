@@ -10,6 +10,8 @@
 
 using boost::asio::ip::tcp;
 
+extern int BUFFER;
+extern int FILE_READ_BUFFER;
 
 class Client {
     //needed params for make connection

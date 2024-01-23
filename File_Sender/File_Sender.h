@@ -1,27 +1,98 @@
 #pragma once
 #include <iostream>
 #include <fstream>
-#include <vector>
-#include <sstream>
+
+static int READ_FILE_BUFFER = 9850;
 
 class File_Sender {
 	std::string file_name;
 	std::ifstream file;
 	char* binary_part_of_file;
 	int size_of_file;
-	std::vector <int> parts;
 public:
-	File_Sender(std::string file_name) {
-		this->binary_part_of_file = new char[1024];
+	enum action {
+		start,
+		body,
+		full,
+		end
+	};
+	action state;
+public:
+	std::string return_action() {
+		switch (this->state) {
+		case start: {
+			return "start";
+			break;
+		}
+
+		case body: {
+			return "body";
+			break;
+		}
+
+		case end: {
+			return "end";
+			break;
+		}
+		case full: {
+			return "full";
+			break;
+		}
+		}
+	}
+	File_Sender() {
+		this->file_name = "";
+	}
+	int getFileSize() {
+		return this->size_of_file;
+	}
+	void init_File_sender(std::string file_name) {
+		//set buffer
+		this->binary_part_of_file = new char[READ_FILE_BUFFER];
+		//open file as binary
 		this->file_name = file_name;
-		this->file.open(this->file_name, std::ios::in | std::ios::binary);
+		this->file.open(this->file_name, std::ios::binary);
+		//set size
+		this->file.seekg(0, this->file.end);
 		this->size_of_file = this->file.tellg();
-		std::ostringstream oss;
-		int len = this->file.readsome(this->binary_part_of_file, 1024);
-		while ((len = this->file.readsome(this->binary_part_of_file, 1024)) > 0) {
-			oss.write(this->binary_part_of_file, this->size_of_file);
-		};
-		std::string output = oss.str();
-		std::cout << output << std::endl;
+		this->file.seekg(0, this->file.beg);
+		//set state for current part of file 
+		this->state = this->start;
+	}
+
+	char* split_file() {
+		this->state = this->start;
+		this->clear_binary_file();
+		if (this->size_of_file <= READ_FILE_BUFFER) {
+			//if file is full
+			this->state = this->full;
+			this->file.read(this->binary_part_of_file, READ_FILE_BUFFER);
+			return this->binary_part_of_file;
+			
+		}
+		if (this->size_of_file - this->file.tellg() <= READ_FILE_BUFFER) {
+			//if its end of file 
+			this->state = this->end;
+			this->file.read(this->binary_part_of_file, this->size_of_file - this->file.tellg());
+			return this->binary_part_of_file;
+		}
+		else {
+			//if its READ_FILE_BUFFER bytes files part
+			this->state = this->body;
+			this->file.read(this->binary_part_of_file, READ_FILE_BUFFER);	
+			return this->binary_part_of_file;
+		}
+	}
+
+	void clear_binary_file() {
+		memset(this->binary_part_of_file, '\0', READ_FILE_BUFFER);
+	}
+
+	void close_file() {
+		this->file.close();
+		this->clear_binary_file();
+		this->file_name = "";
+		this->state = this->start;
+		this->size_of_file = 0;
 	}
 };

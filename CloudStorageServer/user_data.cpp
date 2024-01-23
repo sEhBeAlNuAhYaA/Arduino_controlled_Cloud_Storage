@@ -13,7 +13,7 @@ bool user_data::Authorisation(std::string login, std::string password) {
 		int login_end_position = line.find(':');
 		login_in_db = line.substr(0, login_end_position);
 		password_in_db = line.substr(login_end_position + 1);
-		if (login == login_in_db && bcrypt::validatePassword(password, password_in_db)) {
+		if (login == login_in_db && password == password_in_db) {
 			return true;
 		}
 	}

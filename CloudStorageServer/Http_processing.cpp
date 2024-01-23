@@ -1,7 +1,6 @@
 #include "Http_processing.h"
 
 http_processing::http_processing() {
-	this->file_sender = new File_Sender("image.jpg");
 	this->userdata = new user_data("db.txt");
 }
 
@@ -29,7 +28,17 @@ void http_processing::processing_client_requests(std::queue <char*>& request_que
 		}
 		case TakingAFile: {
 			//bilding a request with file data
-			this->builder.Builder_Answer(RequestAnswer, "200 OK");
+			if (this->file_sender.return_action() == "start" || this->file_sender.return_action() == "full") {
+				//init file (open it)
+				this->file_sender.init_File_sender(this->parser.getPars().keys_map["Content-Name"]);
+			}
+			this->builder.Sending_A_File(this->parser.getPars().keys_map["Content-Name"],
+				this->file_sender.return_action(), this->file_sender.getFileSize(),
+				this->file_sender.split_file());
+
+			if (this->file_sender.return_action() == "end") {
+				this->file_sender.close_file();
+			}
 			break;
 		}
 		case DeleteAFile: {
@@ -38,7 +47,6 @@ void http_processing::processing_client_requests(std::queue <char*>& request_que
 			break;
 		}
 		case SendingAFile: {
-			//saving file in repository
 			this->builder.Builder_Answer(RequestAnswer, "200 OK");
 			break;
 		}
@@ -46,6 +54,10 @@ void http_processing::processing_client_requests(std::queue <char*>& request_que
 			//free space calculation
 			this->builder.Builder_Answer(RequestAnswer, "200 OK");
 			//arduino connection
+			break;
+		}
+		case RequestAnswer: {
+			this->builder.Builder_Answer(RequestAnswer, "200 OK");
 			break;
 		}
 		}
