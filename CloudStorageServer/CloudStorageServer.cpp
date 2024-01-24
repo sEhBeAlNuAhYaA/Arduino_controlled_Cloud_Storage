@@ -10,7 +10,6 @@ int BUFFER = 10000;
 
 using boost::asio::ip::tcp;
 
-static std::queue <char*> request_queue;
 static int client_ID_counter = 0;
 
 Http_Builder server_builder;
@@ -87,16 +86,7 @@ private:
 
     void handle_read(const boost::system::error_code& err, size_t transferred) {
                 
-        if (!err) {
-            //copy into queue
-            char* to_queue = new char[BUFFER];
-            memset(to_queue, '\0', BUFFER);
-            memcpy_s(to_queue, strlen(this->http_request), this->http_request, strlen(this->http_request));
-            request_queue.push(to_queue);
-            
-            //clear a http_request
-            this->clearRequest();
-  
+        if (!err) {  
             
             client_or_server_color("SERVER");
             std::cout << "MESSAGE WAS RECEIVED FROM ";
@@ -110,10 +100,11 @@ private:
             //next_iterarion
             read_message();
             //analyze requests
-            this->http_process.processing_client_requests(request_queue);
+            this->http_process.processing_client_requests(this->http_request);
             this->setHttp_request(this->http_process.builder.get_HTTP());
             this->http_process.builder.clearBuilder();
             this->send_message();
+            this->clearRequest();
    
         }
         else {

@@ -2,13 +2,13 @@
 #include <iostream>
 #include <fstream>
 
-static int READ_FILE_BUFFER = 9850;
+static int READ_FILE_BUFFER = 9000;
 
 class File_Sender {
 	std::string file_name;
 	std::ifstream file;
 	char* binary_part_of_file;
-	int size_of_file;
+	size_t size_of_file;
 public:
 	enum action {
 		start,

@@ -1,7 +1,7 @@
 #include "Client.h"
 
 int BUFFER = 10000;
-int FILE_READ_BUFFER = 9850;
+int FILE_READ_BUFFER = 9000;
 //constructor
 Client::Client(boost::asio::io_context& context)
 	: context_(context), resolver_(context), socket_(context), endpoints_(resolver_.resolve("127.0.0.1", "80")) {
@@ -14,8 +14,8 @@ Client::Client(boost::asio::io_context& context)
 void Client::write_http(char* http_req) {
 	socket_.write_some(boost::asio::mutable_buffer(http_req, BUFFER));
 	if (!error) {
-		client_or_server_color("CLIENT");
-		std::cout << "REQUEST WAS SEND" << std::endl;
+		//client_or_server_color("CLIENT");
+		//std::cout << "REQUEST WAS SEND" << std::endl;
 
 	}
 	else {

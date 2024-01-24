@@ -80,7 +80,7 @@ public:
     }
 
     //RequestsError SendingAFile TakingAFile DeleteAFile
-    char* Sending_A_File(std::string name, std::string part, int size, char* binary_file) {
+    char* Sending_A_File(std::string name, std::string part, size_t size, char* binary_file) {
 		filling_an_array("POST / ");
 		filling_an_array(req_back_converter(SendingAFile));
 		filling_an_array(" HTTP/1.1\n");
@@ -201,9 +201,7 @@ struct parsed_request {
         this->keys_map["Part-File"] = "";
         this->keys_map["login"] = "";
         this->keys_map["password"] = "";
-        this->keys_map["binary-file"] = "";
         this->keys_map["info"] = "";
-        
     }
 };
 
@@ -306,7 +304,6 @@ public:
         this->pars_req.keys_map["Part-File"] = "";
         this->pars_req.keys_map["login"] = "";
         this->pars_req.keys_map["password"] = "";
-        this->pars_req.keys_map["binary-file"] = "";
         this->pars_req.keys_map["info"] = "";
     }
 
