@@ -33,6 +33,7 @@ public:
 
 				this->client.write_http(this->http_builder.Authentification(login, password));
   				this->http_builder.clearBuilder();
+				this->client.clearRequest();
 				this->client.read_http();
                 this->http_parser.setRequest(this->client.get_Request());
                 this->http_parser.Parsing();
@@ -127,6 +128,7 @@ public:
 						if (this->http_parser.getPars().keys_map["Part-File"] == "full" || this->http_parser.getPars().keys_map["Part-File"] == "end") {
 							out.write(this->http_parser.getPars().binary_part, stoi(this->http_parser.getPars().keys_map["Content-Length"]) % FILE_READ_BUFFER);
                             std::cout << ((double)out.tellp() / (stod(this->http_parser.getPars().keys_map["Content-Length"]))) * 100.0 << "%" << std::endl;
+							std::cout << "\x1b[1A";
 							this->http_parser.clearRequest();
 							out.close();
 							break;
@@ -164,11 +166,6 @@ public:
     }
 
     void start_ping_pong() {                
-  
-        client.read_http();
-        this->http_parser.setRequest(client.get_Request());
-        std::cout << this->http_parser.Parsing().keys_map["info"] << std::endl;
-        this->http_parser.clearRequest();
         this->cycle();
         std::cout << "pingpong end" << std::endl;
     }

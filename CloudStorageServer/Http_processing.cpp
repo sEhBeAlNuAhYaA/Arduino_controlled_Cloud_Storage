@@ -4,20 +4,15 @@ http_processing::http_processing() {
 	this->userdata = new user_data("db.txt");
 }
 
-void http_processing::processing_client_requests(char* current_req, std::string& user_name) {
-	//lock a thread
-	queue_lock.lock();
-	//setting request and parsing
-	parser.setRequest(current_req);
-	std::cout << current_req << std::endl;
-	//std::cout << current_req << std::endl;
-	//client_or_server_color("CLIENT");
-	parser.Parsing();
+
+void http_processing::processing_client_requests(parsed_request parsed_req, std::string& user_name) {
+	//setting request
+	this->parsed_req = parsed_req;
 	//clear this request in queue
 
-	switch (this->parser.getPars().type) {
+	switch (this->parsed_req.type) {
 	case Authorisation: {
-		if (this->userdata->Authorisation(this->parser.getPars().keys_map["login"], this->parser.getPars().keys_map["password"])) {
+		if (this->userdata->Authorisation(this->parsed_req.keys_map["login"], this->parsed_req.keys_map["password"])) {
 			this->builder.Builder_Answer(RequestAnswer, "200 OK");
 			std::cout << "Client logged in" << std::endl;
 			user_name = this->userdata->get_user_name();
@@ -32,25 +27,26 @@ void http_processing::processing_client_requests(char* current_req, std::string&
 		//bilding a request with file data
 		if (this->file_sender.return_action() == "start") {
 			//init file (open it)
-			this->file_sender.init_File_sender(user_name + "\\" + this->parser.getPars().keys_map["Content-Name"]);
-			this->builder.Sending_A_File(this->parser.getPars().keys_map["Content-Name"],
-				this->file_sender.split_file(),
-				this->file_sender.getFileSize(),
-				"start");
-			break;
-		}
-		if (this->file_sender.return_action() == "full") {
-			this->file_sender.init_File_sender(user_name + "\\" + this->parser.getPars().keys_map["Content-Name"]);
-			this->builder.Sending_A_File(this->parser.getPars().keys_map["Content-Name"],
-				this->file_sender.split_file(),
-				this->file_sender.getFileSize(),
-				"full");
-			this->file_sender.close_file();
+			this->file_sender.init_File_sender(user_name + "\\" + this->parsed_req.keys_map["Content-Name"]);
+			if (this->file_sender.return_action() == "start") {
+				this->builder.Sending_A_File(this->parsed_req.keys_map["Content-Name"],
+					this->file_sender.split_file(),
+					this->file_sender.getFileSize(),
+					"start");
+			}
+			if (this->file_sender.return_action() == "full") {
+				this->builder.Sending_A_File(this->parsed_req.keys_map["Content-Name"],
+					this->file_sender.split_file(),
+					this->file_sender.getFileSize(),
+					"full");
+
+				this->file_sender.close_file();
+			}
 			break;
 		}
 		this->file_sender.set_right_state(); //--->set the current state of part of file
 
-		this->builder.Sending_A_File(this->parser.getPars().keys_map["Content-Name"],
+		this->builder.Sending_A_File(this->parsed_req.keys_map["Content-Name"],
 			this->file_sender.split_file(),
 			this->file_sender.getFileSize(),
 			this->file_sender.return_action());
@@ -66,19 +62,18 @@ void http_processing::processing_client_requests(char* current_req, std::string&
 		break;
 	}
 	case SendingAFile: {
-		if (this->parser.getPars().keys_map["Part-File"] == "start") {
-			this->fileout.open(user_name + "\\" + this->parser.getPars().keys_map["Content-Name"], std::ios::binary);
-			this->fileout.write(this->parser.getPars().binary_part, 9000);
+		if (this->parsed_req.keys_map["Part-File"] == "start") {
+			this->fileout.open(user_name + "\\" + this->parsed_req.keys_map["Content-Name"], std::ios::binary);
+			this->fileout.write(this->parsed_req.binary_part, 9000);
 		}
-		if (this->parser.getPars().keys_map["Part-File"] == "body") {
-			this->fileout.write(this->parser.getPars().binary_part, 9000);
+		if (this->parsed_req.keys_map["Part-File"] == "body") {
+			this->fileout.write(this->parsed_req.binary_part, 9000);
 		}
-		if (this->parser.getPars().keys_map["Part-File"] == "end" ||
-			this->parser.getPars().keys_map["Part-File"] == "full") {
-			this->fileout.write(this->parser.getPars().binary_part, stoi(this->parser.getPars().keys_map["Content-Length"]) % 9000);
+		if (this->parsed_req.keys_map["Part-File"] == "end" ||
+			this->parsed_req.keys_map["Part-File"] == "full") {
+			this->fileout.write(this->parsed_req.binary_part, stoi(this->parsed_req.keys_map["Content-Length"]) % 9000);
 			this->fileout.close();
 		}
-		std::cout << current_req << std::endl;
 		break;
 	}
 	case ArduinoInfo: {
@@ -92,9 +87,6 @@ void http_processing::processing_client_requests(char* current_req, std::string&
 		break;
 	}
 	}
-	this->parser.clearRequest();
-
-	//open a thread
-	queue_lock.unlock();
+	this->parsed_req.clear_struct();
 
 }

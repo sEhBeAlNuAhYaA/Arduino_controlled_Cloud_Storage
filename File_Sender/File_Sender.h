@@ -42,6 +42,7 @@ public:
 	}
 	File_Sender() {
 		this->file_name = "";
+		this->state = this->start;
 	}
 	int getFileSize() {
 		return this->size_of_file;
@@ -57,13 +58,15 @@ public:
 		this->size_of_file = this->file.tellg();
 		this->file.seekg(0, this->file.beg);
 		//set state for current part of file 
-		this->state = this->start;
-	}
-
-	void set_right_state() {
 		if (this->size_of_file <= READ_FILE_BUFFER) {
 			this->state = this->full;
 		}
+		else {
+			this->state = this->start;
+		}
+	}
+
+	void set_right_state() {
 		if (this->size_of_file - this->file.tellg() <= READ_FILE_BUFFER) {
 			this->state = this->end;
 		}
@@ -78,7 +81,7 @@ public:
 		if (this->size_of_file <= READ_FILE_BUFFER) {
 			//if file is full
 			this->state = this->full;
-			this->file.read(this->binary_part_of_file, READ_FILE_BUFFER);
+			this->file.read(this->binary_part_of_file, size_of_file);
 			return this->binary_part_of_file;
 			
 		}

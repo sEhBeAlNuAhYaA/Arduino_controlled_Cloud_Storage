@@ -14,7 +14,7 @@ static std::mutex queue_lock;
 class http_processing {
 public:
     Http_Builder builder;
-    Http_Parser parser;
+    parsed_request parsed_req;
     File_Sender file_sender;
     
 private:
@@ -22,5 +22,5 @@ private:
     std::ofstream fileout;
 public:
     http_processing();
-    void processing_client_requests(char* current_req, std::string& user_name);
+    void processing_client_requests(parsed_request parsed_req, std::string& user_name);
 };

@@ -203,6 +203,16 @@ struct parsed_request {
         this->keys_map["password"] = "";
         this->keys_map["info"] = "";
     }
+
+    void clear_struct() {
+        memset(this->binary_part, '\0', 9000);
+        this->keys_map["Content-Name"] = "";
+        this->keys_map["Content-Length"] = "";
+        this->keys_map["Part-File"] = "";
+        this->keys_map["login"] = "";
+        this->keys_map["password"] = "";
+        this->keys_map["info"] = "";
+    }
 };
 
 class Http_Parser {
@@ -299,6 +309,7 @@ public:
 
     void clearRequest() {
         memset(this->http_parsed, '\0', HTTP_BUFFER);
+        memset(this->pars_req.binary_part, '\0', HTTP_BUFFER);
         this->pars_req.keys_map["Content-Name"] = "";
         this->pars_req.keys_map["Content-Length"] = "";
         this->pars_req.keys_map["Part-File"] = "";

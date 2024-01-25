@@ -12,18 +12,24 @@ using boost::asio::ip::tcp;
 
 static int client_ID_counter = 0;
 
-Http_Builder server_builder;
-Http_Parser server_parser;
+enum client_state {
+    on_read,
+    on_write,
+    none
+};
 
-class NEW_connection 
-    : public std::enable_shared_from_this<NEW_connection>
+class NEW_connection
+	: public std::enable_shared_from_this<NEW_connection>
 {
-    tcp::socket socket_;
-    int client_ID;
-    char *http_request;
-    boost::system::error_code error;
-    http_processing http_process;
-    std::string user_name;
+	tcp::socket socket_;
+	int client_ID;
+	char* http_request;
+	boost::system::error_code error;
+	http_processing http_process;
+	Http_Builder server_builder;
+	Http_Parser server_parser;
+	std::string user_name;
+    client_state cl_state;
 public:
     typedef std::shared_ptr<NEW_connection> pointer;
     
@@ -35,17 +41,13 @@ public:
         return socket_;
     }
 
-    void send_message(){
+    void start_write(){
         socket_.async_write_some(boost::asio::mutable_buffer(this->http_request, BUFFER),
             boost::bind(&NEW_connection::handle_write, shared_from_this(), 
                 boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred)); 
     }
 
-    void read() {
-        socket_.read_some(boost::asio::mutable_buffer(this->http_request, BUFFER));
-    }
-
-    void read_message() {
+    void start_read() {
         socket_.async_read_some(boost::asio::mutable_buffer(this->http_request, BUFFER),
             boost::bind(&NEW_connection::handle_read, shared_from_this(),
                boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));         
@@ -71,6 +73,7 @@ private:
         client_ID = client_ID_counter;
         this->http_request = new char[BUFFER];
         memset(this->http_request, '\0', BUFFER);
+        this->cl_state = none;
     }
 
     
@@ -82,6 +85,9 @@ private:
 			//color_client_id(this->client_ID);
             //std::cout << std::endl;
 			this->clearRequest();
+            if (this->cl_state == none) {
+                this->start_read();
+            }
         }
         else {
             std::cout << err.what() << std::endl;
@@ -91,7 +97,53 @@ private:
     void handle_read(const boost::system::error_code& err, size_t transferred) {
                 
         if (!err) {  
+               
+            this->server_parser.setRequest(this->http_request);
+            this->server_parser.Parsing();
             
+            switch (this->server_parser.getPars().type) {
+            case Authorisation: {
+                this->http_process.processing_client_requests(this->server_parser.getPars(), this->user_name);
+                this->server_parser.clearRequest();
+                this->http_process.parsed_req.clear_struct();
+                this->setHttp_request(this->http_process.builder.get_HTTP());
+                this->http_process.builder.clearBuilder();
+                break;
+            }
+            case RequestAnswer: {
+
+                break;
+            }
+            case RequestsError: {
+
+                break;
+            }
+			case SendingAFile: {
+				this->cl_state = on_read;
+				Files_Operator(this->server_parser.getPars().type, this->http_process, this->server_parser.getPars());
+				this->http_process.parsed_req.clear_struct();
+				break;
+			}
+			case TakingAFile: {
+				this->cl_state = on_write;
+				Files_Operator(this->server_parser.getPars().type, this->http_process, this->server_parser.getPars());
+				this->http_process.parsed_req.clear_struct();
+                break;
+			}
+            case DeleteAFile: {
+
+                break;
+            }
+            case ArduinoInfo: {
+
+                break;
+            }
+            }
+            
+            if (this->cl_state == none) {
+                this->start_write();
+            }
+                        
             //client_or_server_color("SERVER");
             //std::cout << "MESSAGE WAS RECEIVED FROM ";
             //client_or_server_color("CLIENT");
@@ -105,6 +157,7 @@ private:
 	
 
 			//analyze requests
+            /*
 			this->http_process.parser.setRequest(this->http_request);
 			this->http_process.parser.Parsing();
 
@@ -122,6 +175,7 @@ private:
                 Files_Operator(this->http_process.parser.getPars().type);
             }
             read_message();
+            */
         }
         else {
             if (err.value() == 10054) {
@@ -138,46 +192,39 @@ private:
                 
     }
 
-	void Files_Operator(requests_types current_request) {
-      
-        char* current_req_for_file = new char[BUFFER];
-	    memcpy_s(current_req_for_file, BUFFER, this->http_request, BUFFER);
-
+	void Files_Operator(requests_types current_request, http_processing& http_process, parsed_request parsed_req) {
 
 		if (current_request == SendingAFile) {
             while (true) {
-                this->http_process.parser.clearRequest();
-                this->http_process.processing_client_requests(this->http_request, this->user_name);
-                this->http_process.parser.setRequest(this->http_request);
-                this->http_process.parser.Parsing();
-                if (this->http_process.parser.getPars().keys_map["Part-File"] == "end" ||
-                    this->http_process.parser.getPars().keys_map["Part-File"] == "full") {
-                    this->http_process.parser.clearRequest();
+                
+                http_process.processing_client_requests(parsed_req, this->user_name);
+                if (parsed_req.keys_map["Part-File"] == "end" ||
+                    parsed_req.keys_map["Part-File"] == "full") {
+                    parsed_req.clear_struct();
                     this->clearRequest();
-                    break;
-                }
-                this->clearRequest();
-                this->read_message();
-            }
-		}
-		if (current_request == TakingAFile) {
-            this->http_process.parser.clearRequest();
-			while (true) {
-				this->http_process.processing_client_requests(current_req_for_file, this->user_name);
-				this->setHttp_request(this->http_process.builder.get_HTTP());
-				this->send_message();
-				if (this->http_process.file_sender.getFileSize() == 0) {
-					this->http_process.builder.clearBuilder();
-					client_or_server_color("SERVER");
-					std::cout << "File sent" << std::endl;
+                    this->cl_state = none;
 					break;
 				}
-				this->http_process.builder.clearBuilder();
+				this->clearRequest();
+				this->start_read();
 			}
 		}
-
+		if (current_request == TakingAFile) {
+			while (true) {
+				http_process.processing_client_requests(parsed_req, this->user_name);
+				this->setHttp_request(http_process.builder.get_HTTP());
+                this->start_write();
+				if (http_process.file_sender.getFileSize() == 0) {
+					http_process.builder.clearBuilder();
+					client_or_server_color("SERVER");
+					std::cout << "File sent" << std::endl;
+                    this->cl_state = none;
+					break;
+				}
+				http_process.builder.clearBuilder();
+			}
+		}
     }
-
 };
 
 
@@ -208,13 +255,9 @@ private:
 
     void handle_accept(NEW_connection::pointer new_connection, const boost::system::error_code& error) {
         if (!error) {
-            //new_connection->setHttp_request(server_builder.Builder_Answer(RequestAnswer, "YOU ARE CONNECTED!"));
-            new_connection->setHttp_request(server_builder.Builder_Answer(RequestAnswer, "YOU ARE CONNECTED!"));
-            new_connection->send_message();
-            server_builder.clearBuilder();
+            new_connection->start_read();
             client_or_server_color("SERVER");
             std::cout << "CLIENT(ID:" << new_connection->getID() << ") joined the server" << std::endl;
-            new_connection->read_message();
             start_accept();
         }
         else {
