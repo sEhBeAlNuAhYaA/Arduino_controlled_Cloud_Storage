@@ -73,14 +73,14 @@ public:
     }
 
     void binary_insert(char* binary) {
-        for (int i = this->current_length; i < 9850 + this->current_length; i++) {
+        for (int i = this->current_length; i < 9000 + this->current_length; i++) {
             this->http_builded[i] = binary[i - this->current_length];
         }
-        this->current_length += 9850;
+        this->current_length += 9000;
     }
 
     //RequestsError SendingAFile TakingAFile DeleteAFile
-    char* Sending_A_File(std::string name, std::string part, size_t size, char* binary_file) {
+    char* Sending_A_File(std::string name, char* binary_file,size_t size, std::string part) {
 		filling_an_array("POST / ");
 		filling_an_array(req_back_converter(SendingAFile));
 		filling_an_array(" HTTP/1.1\n");
@@ -194,7 +194,7 @@ struct parsed_request {
     char* binary_part;
 
     parsed_request() {
-        this->binary_part = new char[9850];
+        this->binary_part = new char[9000];
         this->type = Authorisation;
         this->keys_map["Content-Name"] = "";
         this->keys_map["Content-Length"] = "";

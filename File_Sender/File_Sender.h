@@ -6,10 +6,10 @@ static int READ_FILE_BUFFER = 9000;
 
 class File_Sender {
 	std::string file_name;
-	std::ifstream file;
 	char* binary_part_of_file;
 	size_t size_of_file;
 public:
+	std::ifstream file;
 	enum action {
 		start,
 		body,
@@ -60,9 +60,21 @@ public:
 		this->state = this->start;
 	}
 
+	void set_right_state() {
+		if (this->size_of_file <= READ_FILE_BUFFER) {
+			this->state = this->full;
+		}
+		if (this->size_of_file - this->file.tellg() <= READ_FILE_BUFFER) {
+			this->state = this->end;
+		}
+		else {
+			this->state = this->body;
+		}
+	}
+
 	char* split_file() {
-		this->state = this->start;
 		this->clear_binary_file();
+
 		if (this->size_of_file <= READ_FILE_BUFFER) {
 			//if file is full
 			this->state = this->full;

@@ -12,6 +12,7 @@ Client::Client(boost::asio::io_context& context)
 }
 //sync write
 void Client::write_http(char* http_req) {
+	std::cout << http_req << std::endl;
 	socket_.write_some(boost::asio::mutable_buffer(http_req, BUFFER));
 	if (!error) {
 		//client_or_server_color("CLIENT");

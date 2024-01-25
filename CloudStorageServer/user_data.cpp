@@ -14,9 +14,14 @@ bool user_data::Authorisation(std::string login, std::string password) {
 		login_in_db = line.substr(0, login_end_position);
 		password_in_db = line.substr(login_end_position + 1);
 		if (login == login_in_db && password == password_in_db) {
+			this->user_name = login_in_db;
 			return true;
 		}
 	}
 	this->db.close();
 	return false;
+}
+
+std::string user_data::get_user_name() {
+	return this->user_name;
 }

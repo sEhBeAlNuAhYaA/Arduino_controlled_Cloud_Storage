@@ -23,7 +23,7 @@ class NEW_connection
     char *http_request;
     boost::system::error_code error;
     http_processing http_process;
-
+    std::string user_name;
 public:
     typedef std::shared_ptr<NEW_connection> pointer;
     
@@ -39,6 +39,10 @@ public:
         socket_.async_write_some(boost::asio::mutable_buffer(this->http_request, BUFFER),
             boost::bind(&NEW_connection::handle_write, shared_from_this(), 
                 boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred)); 
+    }
+
+    void read() {
+        socket_.read_some(boost::asio::mutable_buffer(this->http_request, BUFFER));
     }
 
     void read_message() {
@@ -72,11 +76,11 @@ private:
     
     void handle_write(const boost::system::error_code& err, size_t transferred) {
         if (!err) {
-            client_or_server_color("SERVER");
-            std::cout << "MESSAGE WAS SENT ";
-			client_or_server_color("CLIENT");
-			color_client_id(this->client_ID);
-            std::cout << std::endl;
+            //client_or_server_color("SERVER");
+            //std::cout << "MESSAGE WAS SENT ";
+			//client_or_server_color("CLIENT");
+			//color_client_id(this->client_ID);
+            //std::cout << std::endl;
 			this->clearRequest();
         }
         else {
@@ -88,24 +92,36 @@ private:
                 
         if (!err) {  
             
-            client_or_server_color("SERVER");
-            std::cout << "MESSAGE WAS RECEIVED FROM ";
-            client_or_server_color("CLIENT");
-            color_client_id(this->client_ID);
-            std::cout << "\n";
+            //client_or_server_color("SERVER");
+            //std::cout << "MESSAGE WAS RECEIVED FROM ";
+            //client_or_server_color("CLIENT");
+            //color_client_id(this->client_ID);
+            //std::cout << "\n";
             //printf("\n%s\n", request_queue.back());
             //std::cout << strlen(request_queue.back()) << std::endl;
             
             
-            //next_iterarion
+			//next_iterarion
+	
+
+			//analyze requests
+			this->http_process.parser.setRequest(this->http_request);
+			this->http_process.parser.Parsing();
+
+            if (this->http_process.parser.getPars().type == Authorisation ||
+                this->http_process.parser.getPars().type == ArduinoInfo   ||
+                this->http_process.parser.getPars().type == DeleteAFile) {
+                this->http_process.parser.clearRequest();
+                this->http_process.processing_client_requests(this->http_request, this->user_name);
+                this->setHttp_request(this->http_process.builder.get_HTTP());
+                this->http_process.builder.clearBuilder();
+                this->send_message();
+            }
+            if (this->http_process.parser.getPars().type == SendingAFile ||
+                this->http_process.parser.getPars().type == TakingAFile) {
+                Files_Operator(this->http_process.parser.getPars().type);
+            }
             read_message();
-            //analyze requests
-            this->http_process.processing_client_requests(this->http_request);
-            this->setHttp_request(this->http_process.builder.get_HTTP());
-            this->http_process.builder.clearBuilder();
-            this->send_message();
-            this->clearRequest();
-   
         }
         else {
             if (err.value() == 10054) {
@@ -116,10 +132,52 @@ private:
             else {
                 std::cout << err.what() << std::endl;
             }
-            
+
         }
+    
                 
     }
+
+	void Files_Operator(requests_types current_request) {
+      
+        char* current_req_for_file = new char[BUFFER];
+	    memcpy_s(current_req_for_file, BUFFER, this->http_request, BUFFER);
+
+
+		if (current_request == SendingAFile) {
+            while (true) {
+                this->http_process.parser.clearRequest();
+                this->http_process.processing_client_requests(this->http_request, this->user_name);
+                this->http_process.parser.setRequest(this->http_request);
+                this->http_process.parser.Parsing();
+                if (this->http_process.parser.getPars().keys_map["Part-File"] == "end" ||
+                    this->http_process.parser.getPars().keys_map["Part-File"] == "full") {
+                    this->http_process.parser.clearRequest();
+                    this->clearRequest();
+                    break;
+                }
+                this->clearRequest();
+                this->read_message();
+            }
+		}
+		if (current_request == TakingAFile) {
+            this->http_process.parser.clearRequest();
+			while (true) {
+				this->http_process.processing_client_requests(current_req_for_file, this->user_name);
+				this->setHttp_request(this->http_process.builder.get_HTTP());
+				this->send_message();
+				if (this->http_process.file_sender.getFileSize() == 0) {
+					this->http_process.builder.clearBuilder();
+					client_or_server_color("SERVER");
+					std::cout << "File sent" << std::endl;
+					break;
+				}
+				this->http_process.builder.clearBuilder();
+			}
+		}
+
+    }
+
 };
 
 
