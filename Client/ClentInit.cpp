@@ -60,28 +60,33 @@ public:
 				switch (input) {
 				case 1: {
                     std::string file_name;
-                    std::cin >> file_name;
+					std::cin >> file_name;
 					File_Sender file_sender;
 
 					while (true) {
 
-						if (file_sender.return_action() == "start" || file_sender.return_action() == "full") {
+						if (file_sender.return_action() == "start") {
 							//init file (open it)
 							file_sender.init_File_sender(file_name);
+							if (file_sender.return_action() == "start") {
 							this->client.write_http(this->http_builder.Sending_A_File(file_name,
-								file_sender.split_file(),
-								file_sender.getFileSize(),
-								file_sender.return_action()));
+									file_sender.split_file(),
+									file_sender.getFileSize(),
+									"start"));
 							this->http_builder.clearBuilder();
-							this->client.clearRequest();
-							std::cout << file_sender.getFileSize() << std::endl;
-							if (file_sender.return_action() == "full") {
-								file_sender.close_file();
-								break;
-							}
 							continue;
-						}
-						std::this_thread::sleep_for(std::chrono::seconds(1));
+							}
+							if (file_sender.return_action() == "full") {
+								this->client.write_http(this->http_builder.Sending_A_File(file_name,
+									file_sender.split_file(),
+									file_sender.getFileSize(),
+									"full"));
+
+								file_sender.close_file();
+								this->http_builder.clearBuilder();
+							}
+							break;
+						}						
 						file_sender.set_right_state();
 
 						this->client.write_http(this->http_builder.Sending_A_File(file_name,
@@ -96,15 +101,14 @@ public:
 							break;
 						}
 					}
-					std::cout << "file sent" << std::endl;
-					continue;
-  					break;
+					this->client.clearRequest();
+					break;
 				}
 				case 2: {
-                    std::ofstream out;
-                    std::string file;
-                    std::cin >> file;
-                    out.open(file, std::ios::binary);
+					std::ofstream out;
+					std::string file;
+					std::cin >> file;
+					out.open(file, std::ios::binary);
                     this->client.write_http(this->http_builder.Builder(TakingAFile, nullptr, file, ""));
                     this->http_builder.clearBuilder();
 					
@@ -115,31 +119,42 @@ public:
                         this->http_parser.setRequest(this->client.get_Request());
                         this->http_parser.Parsing();
 						this->client.clearRequest();
+						std::string part = this->http_parser.getPars().keys_map["Part-File"];
+						double size = stod(this->http_parser.getPars().keys_map["Content-Length"]);
+
 						
 
 						//check for file parts and write those in new file
-						if (this->http_parser.getPars().keys_map["Part-File"] == "start" || this->http_parser.getPars().keys_map["Part-File"] == "body") {
+						if (part == "start" || part == "body") {
 							out.write(this->http_parser.getPars().binary_part, FILE_READ_BUFFER);
-							std::cout << ((double)out.tellp() / (stod(this->http_parser.getPars().keys_map["Content-Length"]))) * 100.0 << "%" << std::endl;
+							std::cout << ((double)out.tellp() / (size)) * 100.0 << "%" << std::endl;
 							std::cout << "\x1b[1A";
 							this->http_parser.clearRequest();
 							continue;
 						}
-						if (this->http_parser.getPars().keys_map["Part-File"] == "full" || this->http_parser.getPars().keys_map["Part-File"] == "end") {
-							out.write(this->http_parser.getPars().binary_part, stoi(this->http_parser.getPars().keys_map["Content-Length"]) % FILE_READ_BUFFER);
-                            std::cout << ((double)out.tellp() / (stod(this->http_parser.getPars().keys_map["Content-Length"]))) * 100.0 << "%" << std::endl;
+						if (part == "full" || part == "end") {
+							if (part == "full") {
+								out.write(this->http_parser.getPars().binary_part, (int)size);
+							}
+							else if ((int)size % FILE_READ_BUFFER == 0) {
+								out.write(this->http_parser.getPars().binary_part, FILE_READ_BUFFER);
+							}
+							else {
+								out.write(this->http_parser.getPars().binary_part, (int)size % FILE_READ_BUFFER);
+							}
+							std::cout << ((double)out.tellp() / size * 100.0) << "%" << std::endl;
 							std::cout << "\x1b[1A";
 							this->http_parser.clearRequest();
 							out.close();
 							break;
 						}
 					}
-                    continue;
+					this->client.clearRequest();
 					break;
 				}
 				case 3: {
-                    //this->client.write_http(this->http_builder.Builder(DeleteAFile, "", "image.png", ""));
-                    this->http_builder.clearBuilder();
+					//this->client.write_http(this->http_builder.Builder(DeleteAFile, "", "image.png", ""));
+					this->http_builder.clearBuilder();
 					break;
 				} 
 				case 4: {
@@ -149,12 +164,16 @@ public:
 				}
 				}
 
-                this->client.read_http();
-                this->http_parser.setRequest(this->client.get_Request());
-                this->client.clearRequest();
-                this->http_parser.Parsing();
-                this->http_parser.clearRequest();
-                std::cout << "\x1b[2J\x1b[H";
+				client.read_http();
+				this->http_parser.setRequest(this->client.get_Request());
+				this->http_parser.Parsing();
+				if (this->http_parser.getPars().keys_map["info"] == "200 OK") {
+					std::cout << "-->!<--" << std::endl;
+				}
+				this->client.clearRequest();
+				this->http_parser.clearRequest();
+				continue;               
+				std::cout << "\x1b[2J\x1b[H";
 
 			}
         }

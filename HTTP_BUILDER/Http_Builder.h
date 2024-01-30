@@ -309,7 +309,7 @@ public:
 
     void clearRequest() {
         memset(this->http_parsed, '\0', HTTP_BUFFER);
-        memset(this->pars_req.binary_part, '\0', HTTP_BUFFER);
+        memset(this->pars_req.binary_part, '\0', 9000);
         this->pars_req.keys_map["Content-Name"] = "";
         this->pars_req.keys_map["Content-Length"] = "";
         this->pars_req.keys_map["Part-File"] = "";

@@ -16,7 +16,7 @@ void http_processing::processing_client_requests(parsed_request parsed_req, std:
 			this->builder.Builder_Answer(RequestAnswer, "200 OK");
 			std::cout << "Client logged in" << std::endl;
 			user_name = this->userdata->get_user_name();
-			std::filesystem::create_directory(user_name);
+		
 		}
 		else {
 			this->builder.Builder_Answer(RequestAnswer, "401");
@@ -27,7 +27,7 @@ void http_processing::processing_client_requests(parsed_request parsed_req, std:
 		//bilding a request with file data
 		if (this->file_sender.return_action() == "start") {
 			//init file (open it)
-			this->file_sender.init_File_sender(user_name + "\\" + this->parsed_req.keys_map["Content-Name"]);
+			this->file_sender.init_File_sender(this->parsed_req.keys_map["Content-Name"]);
 			if (this->file_sender.return_action() == "start") {
 				this->builder.Sending_A_File(this->parsed_req.keys_map["Content-Name"],
 					this->file_sender.split_file(),
@@ -63,7 +63,7 @@ void http_processing::processing_client_requests(parsed_request parsed_req, std:
 	}
 	case SendingAFile: {
 		if (this->parsed_req.keys_map["Part-File"] == "start") {
-			this->fileout.open(user_name + "\\" + this->parsed_req.keys_map["Content-Name"], std::ios::binary);
+			this->fileout.open(this->parsed_req.keys_map["Content-Name"], std::ios::binary);
 			this->fileout.write(this->parsed_req.binary_part, 9000);
 		}
 		if (this->parsed_req.keys_map["Part-File"] == "body") {
@@ -71,7 +71,17 @@ void http_processing::processing_client_requests(parsed_request parsed_req, std:
 		}
 		if (this->parsed_req.keys_map["Part-File"] == "end" ||
 			this->parsed_req.keys_map["Part-File"] == "full") {
-			this->fileout.write(this->parsed_req.binary_part, stoi(this->parsed_req.keys_map["Content-Length"]) % 9000);
+
+			if (this->parsed_req.keys_map["Part-File"] == "full") {
+				this->fileout.write(this->parsed_req.binary_part, stoi(this->parsed_req.keys_map["Content-Length"]));
+			}
+			else if (stoi(this->parsed_req.keys_map["Content-Length"]) % 9000 == 0) {
+				this->fileout.write(this->parsed_req.binary_part, 9000);
+			}
+			else {
+				this->fileout.write(this->parsed_req.binary_part, stoi(this->parsed_req.keys_map["Content-Length"]) % 9000);
+			
+			}
 			this->fileout.close();
 		}
 		break;

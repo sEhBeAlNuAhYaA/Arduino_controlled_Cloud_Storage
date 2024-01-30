@@ -99,95 +99,61 @@ private:
         if (!err) {  
                
             this->server_parser.setRequest(this->http_request);
-            this->server_parser.Parsing();
+			this->server_parser.Parsing();
             
-            switch (this->server_parser.getPars().type) {
-            case Authorisation: {
-                this->http_process.processing_client_requests(this->server_parser.getPars(), this->user_name);
-                this->server_parser.clearRequest();
-                this->http_process.parsed_req.clear_struct();
-                this->setHttp_request(this->http_process.builder.get_HTTP());
-                this->http_process.builder.clearBuilder();
-                break;
-            }
-            case RequestAnswer: {
+			switch (this->server_parser.getPars().type) {
+			case Authorisation: {
+				this->http_process.processing_client_requests(this->server_parser.getPars(), this->user_name);
+				this->server_parser.clearRequest();
+				this->setHttp_request(this->http_process.builder.get_HTTP());
+				this->http_process.builder.clearBuilder();
+				break;
+			}
+			case RequestAnswer: {
 
-                break;
-            }
-            case RequestsError: {
+				break;
+			}
+			case RequestsError: {
 
-                break;
-            }
-			case SendingAFile: {
-				this->cl_state = on_read;
-				Files_Operator(this->server_parser.getPars().type, this->http_process, this->server_parser.getPars());
-				this->http_process.parsed_req.clear_struct();
 				break;
 			}
 			case TakingAFile: {
 				this->cl_state = on_write;
 				Files_Operator(this->server_parser.getPars().type, this->http_process, this->server_parser.getPars());
-				this->http_process.parsed_req.clear_struct();
-                break;
+				break;
 			}
-            case DeleteAFile: {
+			case SendingAFile: {
+				this->cl_state = on_read;
+				Files_Operator(this->server_parser.getPars().type, this->http_process, this->server_parser.getPars());
+				break;
+			}
+			case DeleteAFile: {
 
-                break;
-            }
+				break;
+			}
             case ArduinoInfo: {
 
                 break;
             }
             }
-            
-            if (this->cl_state == none) {
-                this->start_write();
-            }
-                        
-            //client_or_server_color("SERVER");
-            //std::cout << "MESSAGE WAS RECEIVED FROM ";
-            //client_or_server_color("CLIENT");
-            //color_client_id(this->client_ID);
-            //std::cout << "\n";
-            //printf("\n%s\n", request_queue.back());
-            //std::cout << strlen(request_queue.back()) << std::endl;
-            
-            
-			//next_iterarion
-	
 
-			//analyze requests
-            /*
-			this->http_process.parser.setRequest(this->http_request);
-			this->http_process.parser.Parsing();
+			if (this->cl_state == none) {
+				this->start_write();
+                
+			}
 
-            if (this->http_process.parser.getPars().type == Authorisation ||
-                this->http_process.parser.getPars().type == ArduinoInfo   ||
-                this->http_process.parser.getPars().type == DeleteAFile) {
-                this->http_process.parser.clearRequest();
-                this->http_process.processing_client_requests(this->http_request, this->user_name);
-                this->setHttp_request(this->http_process.builder.get_HTTP());
-                this->http_process.builder.clearBuilder();
-                this->send_message();
-            }
-            if (this->http_process.parser.getPars().type == SendingAFile ||
-                this->http_process.parser.getPars().type == TakingAFile) {
-                Files_Operator(this->http_process.parser.getPars().type);
-            }
-            read_message();
-            */
-        }
-        else {
-            if (err.value() == 10054) {
-                client_or_server_color("SERVER");
-                std::cout << "CLIENT(ID:" << this->client_ID << ") disconnected" << std::endl;
-                return;
-            }
-            else {
-                std::cout << err.what() << std::endl;
-            }
+		}
+		else {
+			if (err.value() == 10054) {
+				client_or_server_color("SERVER");
+				std::cout << "CLIENT(ID:" << this->client_ID << ") disconnected" << std::endl;
+				return;
+			}
+			else {
+				std::cout << err.what() << std::endl;
+			}
 
-        }
+		}
     
                 
     }
@@ -195,36 +161,54 @@ private:
 	void Files_Operator(requests_types current_request, http_processing& http_process, parsed_request parsed_req) {
 
 		if (current_request == SendingAFile) {
-            while (true) {
-                
-                http_process.processing_client_requests(parsed_req, this->user_name);
-                if (parsed_req.keys_map["Part-File"] == "end" ||
-                    parsed_req.keys_map["Part-File"] == "full") {
-                    parsed_req.clear_struct();
-                    this->clearRequest();
-                    this->cl_state = none;
-					break;
-				}
+            /////////////////////////////////////////////////////////////////////
+			http_process.processing_client_requests(parsed_req, this->user_name);
+            /////////////////////////////////////////////////////////////////////
+			if (parsed_req.keys_map["Part-File"] == "end" ||
+				parsed_req.keys_map["Part-File"] == "full") {
 				this->clearRequest();
-				this->start_read();
+                // set ANSWER
+				server_builder.Builder_Answer(RequestAnswer, "200 OK");
+				this->setHttp_request(server_builder.get_HTTP());
+				server_builder.clearBuilder();
+                //set state
+				this->cl_state = none;
+                //clear server parser
+				this->server_parser.clearRequest();
+				return;
 			}
+            //clear client current request
+			this->clearRequest();
+      
+			this->start_read();
+
+			this->server_parser.clearRequest();
 		}
 		if (current_request == TakingAFile) {
 			while (true) {
+                /////////////////////////////////////////////////////////////////////
 				http_process.processing_client_requests(parsed_req, this->user_name);
+                /////////////////////////////////////////////////////////////////////
 				this->setHttp_request(http_process.builder.get_HTTP());
-                this->start_write();
+				this->start_write();
+
 				if (http_process.file_sender.getFileSize() == 0) {
 					http_process.builder.clearBuilder();
 					client_or_server_color("SERVER");
 					std::cout << "File sent" << std::endl;
+
+					server_builder.Builder_Answer(RequestAnswer, "200 OK");
+					this->setHttp_request(server_builder.get_HTTP());
+					server_builder.clearBuilder();
+
                     this->cl_state = none;
 					break;
 				}
 				http_process.builder.clearBuilder();
 			}
+            this->server_parser.clearRequest();
 		}
-    }
+	}
 };
 
 
