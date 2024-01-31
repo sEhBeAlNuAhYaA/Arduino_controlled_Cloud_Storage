@@ -40,7 +40,7 @@ void http_processing::processing_client_requests(parsed_request parsed_req, std:
 		//bilding a request with file data
 		if (this->file_sender.return_action() == "start") {
 			//init file (open it)
-			this->file_sender.init_File_sender(this->parsed_req.keys_map["Content-Name"]);
+			this->file_sender.init_File_sender(user_name + "_" + this->parsed_req.keys_map["Content-Name"]);
 			if (this->file_sender.return_action() == "start") {
 				this->builder.Sending_A_File(this->parsed_req.keys_map["Content-Name"],
 					this->file_sender.split_file(),
@@ -76,7 +76,7 @@ void http_processing::processing_client_requests(parsed_request parsed_req, std:
 	}
 	case SendingAFile: {
 		if (this->parsed_req.keys_map["Part-File"] == "start") {
-			this->fileout.open(this->parsed_req.keys_map["Content-Name"], std::ios::binary);
+			this->fileout.open(user_name + "_" + this->parsed_req.keys_map["Content-Name"], std::ios::binary);
 			this->fileout.write(this->parsed_req.binary_part, 9000);
 		}
 		if (this->parsed_req.keys_map["Part-File"] == "body") {
@@ -86,6 +86,7 @@ void http_processing::processing_client_requests(parsed_request parsed_req, std:
 			this->parsed_req.keys_map["Part-File"] == "full") {
 
 			if (this->parsed_req.keys_map["Part-File"] == "full") {
+				this->fileout.open(user_name + "_" + this->parsed_req.keys_map["Content-Name"], std::ios::binary);
 				this->fileout.write(this->parsed_req.binary_part, stoi(this->parsed_req.keys_map["Content-Length"]));
 			}
 			else if (stoi(this->parsed_req.keys_map["Content-Length"]) % 9000 == 0) {

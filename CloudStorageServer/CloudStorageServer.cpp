@@ -79,11 +79,6 @@ private:
     
     void handle_write(const boost::system::error_code& err, size_t transferred) {
         if (!err) {
-            //client_or_server_color("SERVER");
-            //std::cout << "MESSAGE WAS SENT ";
-			//client_or_server_color("CLIENT");
-			//color_client_id(this->client_ID);
-            //std::cout << std::endl;
 			this->clearRequest();
             if (this->cl_state == none) {
                 this->start_read();
@@ -116,14 +111,6 @@ private:
 				this->http_process.builder.clearBuilder();
                 break;
             }
-			case RequestAnswer: {
-
-				break;
-			}
-			case RequestsError: {
-
-				break;
-			}
 			case TakingAFile: {
 				this->cl_state = on_write;
 				Files_Operator(this->server_parser.getPars().type, this->http_process, this->server_parser.getPars());
@@ -146,15 +133,13 @@ private:
 
 			if (this->cl_state == none) {
 				this->start_write();
-                
 			}
 
 		}
 		else {
 			if (err.value() == 10054) {
 				client_or_server_color("SERVER");
-				std::cout << "CLIENT(ID:" << this->client_ID << ") disconnected" << std::endl;
-				return;
+                std::cout << "CLIENT(ID:" << this->client_ID << ") disconnected" << std::endl;
 			}
 			else {
 				std::cout << err.what() << std::endl;
@@ -168,19 +153,19 @@ private:
 	void Files_Operator(requests_types current_request, http_processing& http_process, parsed_request parsed_req) {
 
 		if (current_request == SendingAFile) {
-            /////////////////////////////////////////////////////////////////////
+			/////////////////////////////////////////////////////////////////////
 			http_process.processing_client_requests(parsed_req, this->user_name);
-            /////////////////////////////////////////////////////////////////////
+			/////////////////////////////////////////////////////////////////////
 			if (parsed_req.keys_map["Part-File"] == "end" ||
 				parsed_req.keys_map["Part-File"] == "full") {
 				this->clearRequest();
-                // set ANSWER
+				// set ANSWER
 				server_builder.Builder_Answer("200 OK");
 				this->setHttp_request(server_builder.get_HTTP());
 				server_builder.clearBuilder();
-                //set state
+				//set state
 				this->cl_state = none;
-                //clear server parser
+				//clear server parser
 				this->server_parser.clearRequest();
 				return;
 			}
