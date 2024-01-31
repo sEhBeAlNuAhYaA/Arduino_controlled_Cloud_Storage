@@ -97,7 +97,7 @@ private:
     void handle_read(const boost::system::error_code& err, size_t transferred) {
                 
         if (!err) {  
-               
+            std::cout << this->http_request << std::endl;
             this->server_parser.setRequest(this->http_request);
 			this->server_parser.Parsing();
             
@@ -109,6 +109,13 @@ private:
 				this->http_process.builder.clearBuilder();
 				break;
 			}
+            case Registration: {
+                this->http_process.processing_client_requests(this->server_parser.getPars(), this->user_name);
+				this->server_parser.clearRequest();
+				this->setHttp_request(this->http_process.builder.get_HTTP());
+				this->http_process.builder.clearBuilder();
+                break;
+            }
 			case RequestAnswer: {
 
 				break;
@@ -168,7 +175,7 @@ private:
 				parsed_req.keys_map["Part-File"] == "full") {
 				this->clearRequest();
                 // set ANSWER
-				server_builder.Builder_Answer(RequestAnswer, "200 OK");
+				server_builder.Builder_Answer("200 OK");
 				this->setHttp_request(server_builder.get_HTTP());
 				server_builder.clearBuilder();
                 //set state
@@ -197,7 +204,7 @@ private:
 					client_or_server_color("SERVER");
 					std::cout << "File sent" << std::endl;
 
-					server_builder.Builder_Answer(RequestAnswer, "200 OK");
+					server_builder.Builder_Answer("200 OK");
 					this->setHttp_request(server_builder.get_HTTP());
 					server_builder.clearBuilder();
 

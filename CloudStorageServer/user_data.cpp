@@ -22,6 +22,26 @@ bool user_data::Authorisation(std::string login, std::string password) {
 	return false;
 }
 
+bool user_data::Registration(std::string login, std::string password) {
+	this->db.open(this->file_name);
+	std::string login_in_db;
+	std::string line;
+	while (std::getline(this->db, line)) {
+		int login_end_position = line.find(':');
+		login_in_db = line.substr(0, login_end_position);
+		if (login == login_in_db) {
+			return false;
+		}
+	}
+	this->db.close();
+	std::ofstream out;
+	out.open(this->file_name,std::ios::app);
+	out << "\n" + login + ":" + password;
+	this->user_name = login;
+	out.close();
+	return true;
+}
+
 std::string user_data::get_user_name() {
 	return this->user_name;
 }

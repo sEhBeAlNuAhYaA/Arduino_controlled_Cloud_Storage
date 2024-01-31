@@ -31,7 +31,7 @@ void Client::read_http() {
 	}
 	memset(reinterpret_cast<void*>(this->current_http_request + len), '\0', BUFFER - len);
 	//client_or_server_color("SERVER");
-	//std::cout << this->current_http_request << " (size: " << len << ")" << std::endl;
+	std::cout << this->current_http_request << " (size: " << len << ")" << std::endl;
 
 }
 

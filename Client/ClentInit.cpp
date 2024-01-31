@@ -24,15 +24,22 @@ public:
 		try {
             //authorization cycle
 			while (true) {
+				int in;
+				std::cout << "1. Authentification\n2. Registration" << std::endl;
+				std::cin >> in;
 				std::string login;
 				std::string password;
 				std::cout << "LOGIN: ";
 				std::cin >> login;
 				std::cout << "PASSWORD: ";
 				std::cin >> password;
-
-				this->client.write_http(this->http_builder.Authentification(login, password));
-  				this->http_builder.clearBuilder();
+				if (in == 1) {
+					this->client.write_http(this->http_builder.Authentification(Authorisation, login, password));
+				}
+				if (in == 2) {
+					this->client.write_http(this->http_builder.Authentification(Registration, login, password));
+				}
+				this->http_builder.clearBuilder();
 				this->client.clearRequest();
 				this->client.read_http();
                 this->http_parser.setRequest(this->client.get_Request());
@@ -46,10 +53,19 @@ public:
 					this->http_parser.clearRequest();
 					break;
 				}
+				else if (this->http_parser.getPars().keys_map["info"] == "401") {
+					std::cout << "WRONG PARAMETRS" << std::endl;
+				}
+				else if (this->http_parser.getPars().keys_map["info"] == "380") {
+					std::cout << "THIS LOGIN IN USE" << std::endl;
+				}
+				else {
+					std::cout << "WRONG PASSWORD" << std::endl;
+				}
 
-                this->http_parser.clearRequest();
+				this->http_builder.clearBuilder();
+				this->http_parser.clearRequest();
 
-                std::cout << "WRONG PASSWORD" << std::endl;
 			}
 
             //main cycle with all operations
@@ -109,7 +125,7 @@ public:
 					std::string file;
 					std::cin >> file;
 					out.open(file, std::ios::binary);
-                    this->client.write_http(this->http_builder.Builder(TakingAFile, nullptr, file, ""));
+                    this->client.write_http(this->http_builder.Take_or_Del(TakingAFile, file));
                     this->http_builder.clearBuilder();
 					
 
@@ -158,7 +174,7 @@ public:
 					break;
 				} 
 				case 4: {
-                    this->client.write_http(this->http_builder.Builder(ArduinoInfo));
+                    this->client.write_http(this->http_builder.Arduino());
                     this->http_builder.clearBuilder();
 					break;
 				}

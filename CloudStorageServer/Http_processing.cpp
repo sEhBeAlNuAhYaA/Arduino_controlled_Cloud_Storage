@@ -13,16 +13,29 @@ void http_processing::processing_client_requests(parsed_request parsed_req, std:
 	switch (this->parsed_req.type) {
 	case Authorisation: {
 		if (this->userdata->Authorisation(this->parsed_req.keys_map["login"], this->parsed_req.keys_map["password"])) {
-			this->builder.Builder_Answer(RequestAnswer, "200 OK");
+			this->builder.Builder_Answer("200 OK");
 			std::cout << "Client logged in" << std::endl;
 			user_name = this->userdata->get_user_name();
-		
+
 		}
 		else {
-			this->builder.Builder_Answer(RequestAnswer, "401");
+			this->builder.Builder_Answer("401");
 		}
 		break;
 	}
+	case Registration: {
+		if (this->userdata->Registration(this->parsed_req.keys_map["login"], this->parsed_req.keys_map["password"])) {
+			this->builder.Builder_Answer("200 OK");
+			std::cout << "Client create new account and logged in" << std::endl;
+			user_name = this->userdata->get_user_name();
+
+		}
+		else {
+			this->builder.Builder_Answer("380");
+		}
+		break;
+	}
+
 	case TakingAFile: {
 		//bilding a request with file data
 		if (this->file_sender.return_action() == "start") {
@@ -58,7 +71,7 @@ void http_processing::processing_client_requests(parsed_request parsed_req, std:
 	}
 	case DeleteAFile: {
 		//remove a file from repository
-		this->builder.Builder_Answer(RequestAnswer, "200 OK");
+		this->builder.Builder_Answer("200 OK");
 		break;
 	}
 	case SendingAFile: {
@@ -88,12 +101,12 @@ void http_processing::processing_client_requests(parsed_request parsed_req, std:
 	}
 	case ArduinoInfo: {
 		//free space calculation
-		this->builder.Builder_Answer(RequestAnswer, "200 OK");
+		this->builder.Builder_Answer("200 OK");
 		//arduino connection
 		break;
 	}
 	case RequestAnswer: {
-		this->builder.Builder_Answer(RequestAnswer, "200 OK");
+		this->builder.Builder_Answer("200 OK");
 		break;
 	}
 	}

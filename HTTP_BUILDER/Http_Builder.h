@@ -11,6 +11,7 @@ static int HTTP_BUFFER = 10000;
 enum requests_types {
     ArduinoInfo,
     Authorisation,
+    Registration,
     SendingAFile,
     TakingAFile,
     DeleteAFile,
@@ -22,6 +23,7 @@ enum requests_types {
 inline requests_types req_converter(std::string str_req) {
     if (str_req == "ArduinoInfo") return ArduinoInfo;
     if (str_req == "Authorisation") return Authorisation;
+    if (str_req == "Registration") return Registration;
     if (str_req == "SendingAFile") return SendingAFile;
     if (str_req == "TakingAFile") return TakingAFile;
     if (str_req == "ErrorFromServer") return ErrorFromServer;
@@ -33,6 +35,7 @@ inline requests_types req_converter(std::string str_req) {
 inline std::string req_back_converter(requests_types type) {
     if (type == ArduinoInfo) return "ArduinoInfo";
     if (type == Authorisation) return "Authorisation";
+    if (type == Registration) return "Registration";
     if (type == SendingAFile) return "SendingAFile";
     if (type == TakingAFile) return "TakingAFile";
     if (type == ErrorFromServer) return "ErrorFromServer";
@@ -96,53 +99,39 @@ public:
 		return this->http_builded;
     }
 
-    char* Builder(requests_types type_of_request, char* binary_file, std::string direction, std::string part) {
-        if (type_of_request == RequestsError) {
-            return this->http_builded;
-        }
-        if (type_of_request == SendingAFile || type_of_request == TakingAFile || type_of_request == DeleteAFile) {
-            
-            if (type_of_request == TakingAFile) {
-                filling_an_array("GET / ");
-                filling_an_array(req_back_converter(type_of_request));
-                filling_an_array(" HTTP/1.1\n");
-                filling_an_array("Content-Name: ");
-                filling_an_array(direction);
-                filling_an_array("\n\n");
-                return this->http_builded;
-            }
+	char* Take_or_Del(requests_types type_of_request, std::string& direction) {
+		if (type_of_request == TakingAFile) {
+			filling_an_array("GET / ");
+			filling_an_array(req_back_converter(type_of_request));
+		}
 
-            if (type_of_request == DeleteAFile) {
-                filling_an_array("DELETE / ");
-                filling_an_array(req_back_converter(type_of_request));
-                filling_an_array(" HTTP/1.1\n");
-                filling_an_array("Content-Name: ");
-                filling_an_array(direction);
-                filling_an_array("\n\n");
-                return this->http_builded;
-            }
-        }
-        return this->http_builded;
-    }
-
-    //answer from the server(RequestAnswer)
-    char* Builder_Answer(requests_types type_of_request,std::string message) {
-        if (type_of_request == RequestAnswer) {
-            filling_an_array("HEAD / ");
-            filling_an_array(req_back_converter(type_of_request));
-            filling_an_array(" HTTP/1.1\n");
-            filling_an_array("\n{\n");
-            filling_an_array(message);
-            filling_an_array("\n}\n");
-            return this->http_builded;
-        }
-        return this->http_builded;
-    }
-
-    char* Authentification(std::string login, std::string password) {
-		filling_an_array("PUT / ");
-		filling_an_array(req_back_converter(Authorisation));
+		if (type_of_request == DeleteAFile) {
+			filling_an_array("DELETE / ");
+			filling_an_array(req_back_converter(type_of_request));
+		}
 		filling_an_array(" HTTP/1.1\n");
+		filling_an_array("Content-Name: ");
+		filling_an_array(direction);
+		filling_an_array("\n\n");
+		return this->http_builded;
+	}
+
+	//answer from the server(RequestAnswer)
+	char* Builder_Answer(std::string message) {
+		filling_an_array("HEAD / ");
+		filling_an_array(req_back_converter(RequestAnswer));
+		filling_an_array(" HTTP/1.1\n");
+		filling_an_array("\n{\n");
+		filling_an_array(message);
+		filling_an_array("\n}\n");
+		return this->http_builded;
+	}
+
+    char* Authentification(requests_types type_of_request, std::string login, std::string password) {
+		filling_an_array("PUT / ");
+        if (type_of_request == Authorisation) filling_an_array(req_back_converter(Authorisation));
+        if (type_of_request == Registration) filling_an_array(req_back_converter(Registration));
+	    filling_an_array(" HTTP/1.1\n");
 		filling_an_array("\n{\nlogin=");
 		filling_an_array(login);
 		filling_an_array("\npassword=");
@@ -150,32 +139,18 @@ public:
 		filling_an_array("\n}\n");
 		return this->http_builded;
     }
-    
 
-    char* Builder(requests_types type_of_request) {
-        if (type_of_request == RequestsError) {
-            return this->http_builded;
-        }
-        if (type_of_request == ArduinoInfo) {
-            filling_an_array("HEAD / ");
-            filling_an_array(req_back_converter(type_of_request));
-            filling_an_array(" HTTP/1.1\n");
-            return this->http_builded;
-        }
-        if (type_of_request == Authorisation || type_of_request == ErrorFromServer) {
-            if (type_of_request == ErrorFromServer) {
-                filling_an_array("PUT / ");
-                filling_an_array(req_back_converter(type_of_request));
-                filling_an_array(" HTTP/1.1\n");
-                return this->http_builded;
-            }
-        }
-        return this->http_builded;
-    }
 
-    char* get_HTTP() {
-        return this->http_builded;
-    }
+	char* Arduino() {
+		filling_an_array("HEAD / ");
+		filling_an_array(req_back_converter(ArduinoInfo));
+		filling_an_array(" HTTP/1.1\n");
+		return this->http_builded;
+	}
+
+	char* get_HTTP() {
+		return this->http_builded;
+	}
 
     int getSize() {
         return this->current_length;
@@ -272,7 +247,7 @@ public:
         }
         this->pars_req.type = req_converter(parsed_request_type);
 
-        if (this->pars_req.type == Authorisation) {
+        if (this->pars_req.type == Authorisation || this->pars_req.type == Registration) {
             this->Extract_parts("login=", '\n', "login");
             this->Extract_parts("password=", '\n', "password");
             return this->pars_req;
