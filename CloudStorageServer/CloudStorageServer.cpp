@@ -18,21 +18,59 @@ enum client_state {
     none
 };
 
+class Client_Vector;
+
+class Files_Checker {
+    std::vector <std::string> Files_List;
+    std::string directory_name;
+public:
+    Files_Checker(){}
+	Files_Checker(std::string name) {
+		this->directory_name = name;
+	}
+
+    void update_list() {
+        for (auto el : std::filesystem::directory_iterator(this->directory_name)) {
+            std::filesystem::path filepath = el.path();
+            this->Files_List.push_back((filepath.string()).erase(0,filepath.string().find_first_of("_") + 1));
+		}
+    }
+
+    void print_list() {
+        for (auto el : this->Files_List) {
+            std::cout << el << std::endl;
+        }
+    }
+    
+    std::vector <std::string> getFiles_List() {
+        return this->Files_List;
+    }
+
+    void clear_vector() {
+        this->Files_List.clear();
+    }
+};
+
 class NEW_connection
 	: public std::enable_shared_from_this<NEW_connection>
 {
 	tcp::socket socket_;
 	int client_ID;
+	std::string user_name;
 	char* http_request;
+	client_state cl_state;
+
 	boost::system::error_code error;
+
 	http_processing http_process;
 	Http_Builder server_builder;
 	Http_Parser server_parser;
-	std::string user_name;
-    client_state cl_state;
+
+    Files_Checker files_checker;
+
 public:
-    typedef std::shared_ptr<NEW_connection> pointer;
-    
+	typedef std::shared_ptr<NEW_connection> pointer;
+
     static pointer create(boost::asio::io_context& context) {
         return pointer(new NEW_connection(context));
     }
@@ -67,13 +105,14 @@ private:
     }
 
     NEW_connection(boost::asio::io_context& context)
-        : socket_(context){
+        : socket_(context), files_checker("Files") {
 
         client_ID_counter++;
         client_ID = client_ID_counter;
         this->http_request = new char[BUFFER];
         memset(this->http_request, '\0', BUFFER);
         this->cl_state = none;
+       
     }
 
     
@@ -92,7 +131,7 @@ private:
     void handle_read(const boost::system::error_code& err, size_t transferred) {
                 
         if (!err) {  
-            std::cout << this->http_request << std::endl;
+            //std::cout << this->http_request << std::endl;
             this->server_parser.setRequest(this->http_request);
 			this->server_parser.Parsing();
             
@@ -122,7 +161,6 @@ private:
 				break;
 			}
 			case DeleteAFile: {
-
 				break;
 			}
             case ArduinoInfo: {
@@ -167,11 +205,14 @@ private:
 				this->cl_state = none;
 				//clear server parser
 				this->server_parser.clearRequest();
+				this->files_checker.update_list();
+				this->files_checker.print_list();             
+                this->files_checker.clear_vector();
 				return;
 			}
-            //clear client current request
+			//clear client current request
 			this->clearRequest();
-      
+
 			this->start_read();
 
 			this->server_parser.clearRequest();
@@ -193,7 +234,11 @@ private:
 					this->setHttp_request(server_builder.get_HTTP());
 					server_builder.clearBuilder();
 
-                    this->cl_state = none;
+					this->cl_state = none;
+
+					this->files_checker.update_list();
+                    this->files_checker.print_list();
+                    this->files_checker.clear_vector();
 					break;
 				}
 				http_process.builder.clearBuilder();
@@ -203,17 +248,36 @@ private:
 	}
 };
 
+class Client_Vector {
+    std::vector <NEW_connection::pointer> client_vector;
+public:
+    Client_Vector() {
+    }
+    void add_new_client(NEW_connection::pointer client) {
+        this->client_vector.push_back(client);
+    }
+    void send_storage_state() {
+        for (auto el : this->client_vector) {
+            //something to write
+            el->start_write();
+        }
+    }
+};
+
+
 
 class Cloud_Storage {
     //private context and acceptor
     boost::asio::io_context& context_;
     tcp::acceptor acceptor_;
+    Client_Vector client_vector;
 public:
     Cloud_Storage(boost::asio::io_context& context)
         :context_(context), 
         acceptor_(context, tcp::endpoint(tcp::v4(),80)) 
     {
         start_accept();
+        std::filesystem::create_directories("Files");
     }
 private:
     void start_accept() {
@@ -232,6 +296,7 @@ private:
     void handle_accept(NEW_connection::pointer new_connection, const boost::system::error_code& error) {
         if (!error) {
             new_connection->start_read();
+            this->client_vector.add_new_client(new_connection);
             client_or_server_color("SERVER");
             std::cout << "CLIENT(ID:" << new_connection->getID() << ") joined the server" << std::endl;
             start_accept();
