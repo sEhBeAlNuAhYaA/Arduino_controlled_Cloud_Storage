@@ -29,14 +29,17 @@ public:
 		this->directory_name = name;
 	}
 
-    void update_list() {
+    void update_list(std::string user_name) {
         for (auto el : std::filesystem::directory_iterator(this->directory_name)) {
             std::filesystem::path filepath = el.path();
-            this->Files_List.push_back((filepath.string()).erase(0,filepath.string().find_first_of("_") + 1));
+            int user_name_poz = filepath.string().find(user_name);
+            if (user_name_poz == 6) {
+				this->Files_List.push_back((filepath.string()).erase(0, filepath.string().find_first_of("_") + 1));
+			}
 		}
-    }
+	}
 
-    void print_list() {
+	void print_list() {
         for (auto el : this->Files_List) {
             std::cout << el << std::endl;
         }
@@ -161,13 +164,27 @@ private:
 				break;
 			}
 			case DeleteAFile: {
+				std::filesystem::remove("Files\\" + user_name + "_" + this->server_parser.getPars().keys_map["Content-Name"]);
+				this->server_builder.Builder_Answer("200 OK");
+				this->setHttp_request(this->server_builder.get_HTTP());
+                this->server_builder.clearBuilder();
+				this->server_parser.clearRequest();
 				break;
 			}
-            case ArduinoInfo: {
+			case GetFilesList: {
+				this->files_checker.update_list(this->user_name);
+				this->server_builder.Files_List(this->files_checker.getFiles_List());
+				this->setHttp_request(this->server_builder.get_HTTP());
+                this->server_builder.clearBuilder();
+				this->files_checker.clear_vector();
+				this->server_parser.clearRequest();
+				break;
+			}
+			case ArduinoInfo: {
 
-                break;
-            }
-            }
+				break;
+			}
+			}
 
 			if (this->cl_state == none) {
 				this->start_write();
@@ -205,9 +222,6 @@ private:
 				this->cl_state = none;
 				//clear server parser
 				this->server_parser.clearRequest();
-				this->files_checker.update_list();
-				this->files_checker.print_list();             
-                this->files_checker.clear_vector();
 				return;
 			}
 			//clear client current request
@@ -235,10 +249,6 @@ private:
 					server_builder.clearBuilder();
 
 					this->cl_state = none;
-
-					this->files_checker.update_list();
-                    this->files_checker.print_list();
-                    this->files_checker.clear_vector();
 					break;
 				}
 				http_process.builder.clearBuilder();
@@ -290,7 +300,7 @@ private:
         catch (boost::system::error_code& error) {
             std::cout << error.what() << std::endl;
         }
-        
+       
     }
 
     void handle_accept(NEW_connection::pointer new_connection, const boost::system::error_code& error) {

@@ -72,6 +72,7 @@ void http_processing::processing_client_requests(parsed_request parsed_req, std:
 	}
 	case DeleteAFile: {
 		//remove a file from repository
+		std::filesystem::remove(this->parsed_req.keys_map["Content-Name"]); 
 		this->builder.Builder_Answer("200 OK");
 		break;
 	}
@@ -108,6 +109,7 @@ void http_processing::processing_client_requests(parsed_request parsed_req, std:
 		break;
 	}
 	case RequestAnswer: {
+
 		this->builder.Builder_Answer("200 OK");
 		break;
 	}

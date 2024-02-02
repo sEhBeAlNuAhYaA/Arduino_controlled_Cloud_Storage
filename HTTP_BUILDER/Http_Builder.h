@@ -15,17 +15,19 @@ enum requests_types {
     SendingAFile,
     TakingAFile,
     DeleteAFile,
+    GetFilesList,
     ErrorFromServer,
     RequestsError,
     RequestAnswer
 };
 
-inline requests_types req_converter(std::string str_req) {
+inline requests_types req_converter(std::string& str_req) {
     if (str_req == "ArduinoInfo") return ArduinoInfo;
     if (str_req == "Authorisation") return Authorisation;
     if (str_req == "Registration") return Registration;
     if (str_req == "SendingAFile") return SendingAFile;
     if (str_req == "TakingAFile") return TakingAFile;
+    if (str_req == "GetFilesList") return GetFilesList;
     if (str_req == "ErrorFromServer") return ErrorFromServer;
     if (str_req == "RequestAnswer") return RequestAnswer;
     if (str_req == "DeleteAFile") return DeleteAFile;
@@ -38,6 +40,7 @@ inline std::string req_back_converter(requests_types type) {
     if (type == Registration) return "Registration";
     if (type == SendingAFile) return "SendingAFile";
     if (type == TakingAFile) return "TakingAFile";
+    if (type == GetFilesList) return "GetFilesList";
     if (type == ErrorFromServer) return "ErrorFromServer";
     if (type == RequestAnswer) return "RequestAnswer";
     if (type == DeleteAFile) return "DeleteAFile";
@@ -82,8 +85,7 @@ public:
         this->current_length += 9000;
     }
 
-    //RequestsError SendingAFile TakingAFile DeleteAFile
-    char* Sending_A_File(std::string name, char* binary_file,size_t size, std::string part) {
+    char* Sending_A_File(std::string& name, char* binary_file,size_t size, std::string part) {
 		filling_an_array("POST / ");
 		filling_an_array(req_back_converter(SendingAFile));
 		filling_an_array(" HTTP/1.1\n");
@@ -127,7 +129,7 @@ public:
 		return this->http_builded;
 	}
 
-    char* Authentification(requests_types type_of_request, std::string login, std::string password) {
+    char* Authentification(requests_types type_of_request, std::string& login, std::string& password) {
 		filling_an_array("PUT / ");
         if (type_of_request == Authorisation) filling_an_array(req_back_converter(Authorisation));
         if (type_of_request == Registration) filling_an_array(req_back_converter(Registration));
@@ -145,8 +147,32 @@ public:
 		filling_an_array("HEAD / ");
 		filling_an_array(req_back_converter(ArduinoInfo));
 		filling_an_array(" HTTP/1.1\n");
-		return this->http_builded;
+        return this->http_builded;
 	}
+
+    char* Files_List(std::vector <std::string> files_list) {
+        filling_an_array("POST / ");
+        filling_an_array(req_back_converter(GetFilesList));
+		filling_an_array(" HTTP/1.1\n");
+        filling_an_array("\n{\n");
+        if (files_list.empty()) {
+            filling_an_array("List is empty");
+        }
+        else {
+            for (std::string el : files_list) {
+                filling_an_array(el + "\n");
+            }
+        }
+      	filling_an_array("}\n");
+        return this->http_builded;
+    }
+
+    char* get_Files_List() {
+        filling_an_array("GET / ");
+        filling_an_array(req_back_converter(GetFilesList));
+		filling_an_array(" HTTP/1.1\n");
+        return this->http_builded;
+    }
 
 	char* get_HTTP() {
 		return this->http_builded;
@@ -270,13 +296,18 @@ public:
             this->Extract_parts("Content-Name: ", '\n', "Content-Name");
             return this->pars_req;
         }
-
-        if (this->pars_req.type == RequestAnswer) { 
-            this->Extract_parts("{\n", '\n', "info");
-            return this->pars_req;   
+        if (this->pars_req.type == GetFilesList) {
+            this->Extract_parts("{\n", '}', "info");
+            return this->pars_req;
         }
-        return this->pars_req;
-    }
+        
+		if (this->pars_req.type == RequestAnswer) {
+			this->Extract_parts("{\n", '\n', "info");
+			return this->pars_req;
+		}
+
+		return this->pars_req;
+	}
     
     void setRequest(char* http_parsed) {
         memcpy_s(this->http_parsed, HTTP_BUFFER, http_parsed, HTTP_BUFFER);

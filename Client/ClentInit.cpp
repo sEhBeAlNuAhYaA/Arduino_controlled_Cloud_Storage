@@ -42,11 +42,10 @@ public:
 				this->http_builder.clearBuilder();
 				this->client.clearRequest();
 				this->client.read_http();
-                this->http_parser.setRequest(this->client.get_Request());
-                this->http_parser.Parsing();
+				this->http_parser.setRequest(this->client.get_Request());
+				this->http_parser.Parsing();
 
 				client_or_server_color("SERVER");
-
 				if (this->http_parser.getPars().keys_map["info"] == "200 OK") {
 					std::cout << "YOU LOGGED IN" << std::endl;
 					this->http_builder.clearBuilder();
@@ -71,7 +70,7 @@ public:
             //main cycle with all operations
             int input;
 			while (true) {
-				std::cout << "1. send file;\n2. take file;\n3. delete file;\n4. check storage size;\ninput: " << std::endl;
+				std::cout << "1. send file;\n2. take file;\n3. delete file;\n4. check storage size;\n5. Check files;\ninput: " << std::endl;
 				std::cin >> input;
 				switch (input) {
 				case 1: {
@@ -169,7 +168,9 @@ public:
 					break;
 				}
 				case 3: {
-					//this->client.write_http(this->http_builder.Builder(DeleteAFile, "", "image.png", ""));
+					std::string file_name;
+					std::cin >> file_name;
+					this->client.write_http(this->http_builder.Take_or_Del(DeleteAFile, file_name));
 					this->http_builder.clearBuilder();
 					break;
 				} 
@@ -177,6 +178,18 @@ public:
                     this->client.write_http(this->http_builder.Arduino());
                     this->http_builder.clearBuilder();
 					break;
+				}
+				case 5: {
+					this->client.write_http(this->http_builder.get_Files_List());
+					this->http_builder.clearBuilder();
+
+					this->client.read_http();
+					this->http_parser.setRequest(this->client.get_Request());
+					this->http_parser.Parsing();
+
+					std::cout << this->http_parser.getPars().keys_map["info"] << std::endl;
+					this->http_parser.clearRequest();
+					continue;
 				}
 				}
 
