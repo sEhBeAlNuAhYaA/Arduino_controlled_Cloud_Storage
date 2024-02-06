@@ -8,7 +8,7 @@
 #include <fstream>
 #include <File_Sender.h>
 #include <filesystem>
-static size_t REPOSITORY_MAX_SIZE = 10000000000;
+
 static std::mutex queue_lock;
 
 class http_processing {

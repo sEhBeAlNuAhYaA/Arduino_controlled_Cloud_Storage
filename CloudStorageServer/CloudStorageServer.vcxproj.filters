@@ -30,6 +30,9 @@
     <ClCompile Include="user_data.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="space_saver.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Http_processing.h">
@@ -45,6 +48,9 @@
       <Filter>Исходные файлы</Filter>
     </ClInclude>
     <ClInclude Include="user_data.h">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="space_saver.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
   </ItemGroup>

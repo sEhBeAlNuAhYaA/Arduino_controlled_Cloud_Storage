@@ -139,6 +139,7 @@
     <ClCompile Include="blowfish.cpp" />
     <ClCompile Include="CloudStorageServer.cpp" />
     <ClCompile Include="Http_processing.cpp" />
+    <ClCompile Include="space_saver.cpp" />
     <ClCompile Include="user_data.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -146,6 +147,7 @@
     <ClInclude Include="Http_processing.h" />
     <ClInclude Include="node_blf.h" />
     <ClInclude Include="openbsd.h" />
+    <ClInclude Include="space_saver.h" />
     <ClInclude Include="user_data.h" />
   </ItemGroup>
   <ItemGroup>
