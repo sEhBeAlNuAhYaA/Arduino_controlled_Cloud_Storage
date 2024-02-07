@@ -8,6 +8,7 @@
 #include <fstream>
 #include <File_Sender.h>
 #include <filesystem>
+#include "space_saver.h"
 
 static std::mutex queue_lock;
 
@@ -22,5 +23,5 @@ private:
     std::ofstream fileout;
 public:
     http_processing();
-    void processing_client_requests(parsed_request parsed_req, std::string& user_name);
+    void processing_client_requests(parsed_request parsed_req, std::string& user_name, Space_Saver& space_saver);
 };

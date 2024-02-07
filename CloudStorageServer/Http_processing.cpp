@@ -5,7 +5,7 @@ http_processing::http_processing() {
 }
 
 
-void http_processing::processing_client_requests(parsed_request parsed_req, std::string& user_name) {
+void http_processing::processing_client_requests(parsed_request parsed_req, std::string& user_name, Space_Saver& space_saver) {
 	//setting request
 	this->parsed_req = parsed_req;
 	//clear this request in queue
@@ -78,7 +78,7 @@ void http_processing::processing_client_requests(parsed_request parsed_req, std:
 	}
 	case SendingAFile: {
 		if (this->parsed_req.keys_map["Part-File"] == "start") {
-			this->fileout.open("Files\\" + user_name + "_" + this->parsed_req.keys_map["Content-Name"], std::ios::binary);
+			this->fileout.open("Files\\" + user_name + "_" + space_saver.name_compare(this->parsed_req.keys_map["Content-Name"], user_name), std::ios::binary);
 			this->fileout.write(this->parsed_req.binary_part, 9000);
 		}
 		if (this->parsed_req.keys_map["Part-File"] == "body") {
@@ -88,7 +88,7 @@ void http_processing::processing_client_requests(parsed_request parsed_req, std:
 			this->parsed_req.keys_map["Part-File"] == "full") {
 
 			if (this->parsed_req.keys_map["Part-File"] == "full") {
-				this->fileout.open("Files\\" + user_name + "_" + this->parsed_req.keys_map["Content-Name"], std::ios::binary);
+				this->fileout.open("Files\\" + user_name + "_" + space_saver.name_compare(this->parsed_req.keys_map["Content-Name"], user_name), std::ios::binary);
 				this->fileout.write(this->parsed_req.binary_part, stoi(this->parsed_req.keys_map["Content-Length"]));
 			}
 			else if (stoi(this->parsed_req.keys_map["Content-Length"]) % 9000 == 0) {

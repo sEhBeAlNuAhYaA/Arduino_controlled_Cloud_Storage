@@ -4,7 +4,6 @@
 #include <boost/bind.hpp>
 #include <Http_Builder.h>
 #include "Http_processing.h"
-#include "space_saver.h"
 
 int BUFFER = 10000;
 
@@ -36,7 +35,7 @@ class NEW_connection
 	Http_Builder server_builder;
 	Http_Parser server_parser;
 
-   
+    Space_Saver space_saver;
 public:
 	typedef std::shared_ptr<NEW_connection> pointer;
 
@@ -106,14 +105,14 @@ private:
             
 			switch (this->server_parser.getPars().type) {
 			case Authorisation: {
-				this->http_process.processing_client_requests(this->server_parser.getPars(), this->user_name);
+				this->http_process.processing_client_requests(this->server_parser.getPars(), this->user_name, this->space_saver);
 				this->server_parser.clearRequest();
 				this->setHttp_request(this->http_process.builder.get_HTTP());
 				this->http_process.builder.clearBuilder();
 				break;
 			}
             case Registration: {
-                this->http_process.processing_client_requests(this->server_parser.getPars(), this->user_name);
+                this->http_process.processing_client_requests(this->server_parser.getPars(), this->user_name, this->space_saver);
 				this->server_parser.clearRequest();
 				this->setHttp_request(this->http_process.builder.get_HTTP());
 				this->http_process.builder.clearBuilder();
@@ -145,7 +144,7 @@ private:
 				break;
 			}
 			case ArduinoInfo: {
-
+                
 				break;
 			}
 			}
@@ -173,7 +172,7 @@ private:
 
 		if (current_request == SendingAFile) {
 			/////////////////////////////////////////////////////////////////////
-			http_process.processing_client_requests(parsed_req, this->user_name);
+			http_process.processing_client_requests(parsed_req, this->user_name, this->space_saver);
 			/////////////////////////////////////////////////////////////////////
 			if (parsed_req.keys_map["Part-File"] == "end" ||
 				parsed_req.keys_map["Part-File"] == "full") {
@@ -185,7 +184,10 @@ private:
 				//set state
 				this->cl_state = none;
 				//clear server parser
+                this->space_saver.new_file_name_compare(this->server_parser.getPars().keys_map["Content-Name"], this->user_name);
 				this->server_parser.clearRequest();
+
+				//binary part of file comparing
 				return;
 			}
 			//clear client current request
@@ -198,7 +200,7 @@ private:
 		if (current_request == TakingAFile) {
 			while (true) {
                 /////////////////////////////////////////////////////////////////////
-				http_process.processing_client_requests(parsed_req, this->user_name);
+				http_process.processing_client_requests(parsed_req, this->user_name, this->space_saver);
                 /////////////////////////////////////////////////////////////////////
 				this->setHttp_request(http_process.builder.get_HTTP());
 				this->start_write();
