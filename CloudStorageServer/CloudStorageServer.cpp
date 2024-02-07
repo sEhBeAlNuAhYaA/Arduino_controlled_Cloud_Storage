@@ -20,39 +20,6 @@ enum client_state {
 
 class Client_Vector;
 
-class Files_Checker {
-    std::vector <std::string> Files_List;
-    std::string directory_name;
-public:
-    Files_Checker(){}
-	Files_Checker(std::string name) {
-		this->directory_name = name;
-	}
-
-    void update_list(std::string user_name) {
-        for (auto el : std::filesystem::directory_iterator(this->directory_name)) {
-            std::filesystem::path filepath = el.path();
-            int user_name_poz = filepath.string().find(user_name);
-            if (user_name_poz == 6) {
-				this->Files_List.push_back((filepath.string()).erase(0, filepath.string().find_first_of("_") + 1));
-			}
-		}
-	}
-
-	void print_list() {
-        for (auto el : this->Files_List) {
-            std::cout << el << std::endl;
-        }
-    }
-    
-    std::vector <std::string> getFiles_List() {
-        return this->Files_List;
-    }
-
-    void clear_vector() {
-        this->Files_List.clear();
-    }
-};
 
 class NEW_connection
 	: public std::enable_shared_from_this<NEW_connection>
@@ -69,8 +36,7 @@ class NEW_connection
 	Http_Builder server_builder;
 	Http_Parser server_parser;
 
-    Files_Checker files_checker;
-
+   
 public:
 	typedef std::shared_ptr<NEW_connection> pointer;
 
@@ -108,7 +74,7 @@ private:
     }
 
     NEW_connection(boost::asio::io_context& context)
-        : socket_(context), files_checker("Files") {
+        : socket_(context) {
 
         client_ID_counter++;
         client_ID = client_ID_counter;
@@ -172,11 +138,9 @@ private:
 				break;
 			}
 			case GetFilesList: {
-				this->files_checker.update_list(this->user_name);
-				this->server_builder.Files_List(this->files_checker.getFiles_List());
+				this->server_builder.Files_List(Files_Checker::update_own_list("Files", this->user_name));
 				this->setHttp_request(this->server_builder.get_HTTP());
-                this->server_builder.clearBuilder();
-				this->files_checker.clear_vector();
+				this->server_builder.clearBuilder();
 				this->server_parser.clearRequest();
 				break;
 			}
