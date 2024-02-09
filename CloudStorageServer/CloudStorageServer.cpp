@@ -129,15 +129,15 @@ private:
 				break;
 			}
 			case DeleteAFile: {
-				std::filesystem::remove("Files\\" + user_name + "_" + this->server_parser.getPars().keys_map["Content-Name"]);
-				this->server_builder.Builder_Answer("200 OK");
+                this->space_saver.rem_file_from_db(this->server_parser.getPars().keys_map["Content-Name"], this->user_name);
+                this->server_builder.Builder_Answer("200 OK");
 				this->setHttp_request(this->server_builder.get_HTTP());
                 this->server_builder.clearBuilder();
 				this->server_parser.clearRequest();
 				break;
 			}
 			case GetFilesList: {
-				this->server_builder.Files_List(Files_Checker::update_own_list("Files", this->user_name));
+				this->server_builder.Files_List(space_saver.update_own_list(this->user_name));
 				this->setHttp_request(this->server_builder.get_HTTP());
 				this->server_builder.clearBuilder();
 				this->server_parser.clearRequest();
@@ -184,7 +184,7 @@ private:
 				//set state
 				this->cl_state = none;
 				//clear server parser
-                this->space_saver.new_file_name_compare(this->server_parser.getPars().keys_map["Content-Name"], this->user_name);
+                this->space_saver.add_file_to_db(this->server_parser.getPars().keys_map["Content-Name"], this->user_name);
 				this->server_parser.clearRequest();
 
 				//binary part of file comparing
@@ -246,7 +246,7 @@ class Cloud_Storage {
     //private context and acceptor
     boost::asio::io_context& context_;
     tcp::acceptor acceptor_;
-    Client_Vector client_vector;
+    //Client_Vector client_vector;
 public:
     Cloud_Storage(boost::asio::io_context& context)
         :context_(context), 
@@ -272,7 +272,7 @@ private:
     void handle_accept(NEW_connection::pointer new_connection, const boost::system::error_code& error) {
         if (!error) {
             new_connection->start_read();
-            this->client_vector.add_new_client(new_connection);
+            //this->client_vector.add_new_client(new_connection);
             client_or_server_color("SERVER");
             std::cout << "CLIENT(ID:" << new_connection->getID() << ") joined the server" << std::endl;
             start_accept();

@@ -20,7 +20,6 @@ void files_state::clear_files_state() {
 
 Space_Saver::Space_Saver() {
 	this->new_file_name = "";
-
 }
 std::string Space_Saver::name_compare(std::string new_file_name, std::string user) {
 	files_state file;
@@ -44,7 +43,7 @@ bool Space_Saver::new_file_name_compare(std::string file_name, std::string user)
 	files_state new_file;
 	bool compare = false;
 	//new_file.add_a_new_file(this->new_file_name, 0, )
-	std::string f = "Files\\" + user + "_" + this->all_files[this->all_files.size() - 1].file_name;
+	std::string f = "Files\\"  + this->all_files[this->all_files.size() - 1].file_name;
 	std::ifstream fin;
 	fin.open(f, std::ios::binary);
 	//size of input file 
@@ -56,15 +55,11 @@ bool Space_Saver::new_file_name_compare(std::string file_name, std::string user)
 	fin.seekg(0,fin.beg);
 	//another file
 	std::ifstream fanother;
-	for (auto file : this->all_files) {
+	for (int i = 0; i < this->all_files.size() - 1; i++) {
+		auto file = this->all_files[i];
 		if (this->new_file_name == file.file_name) {
-			if (file.file_users.size() == 1) {
-				fanother.open("Files\\" + user + "_" + file.file_name, std::ios::binary);
-			}
-			else {
-				fanother.open("Files\\all_" + file.file_name, std::ios::binary);
-			}
-
+			fanother.open("Files\\" + file.file_name, std::ios::binary);
+		
 			fanother.seekg(0,fanother.end);
 			size_t fanother_size = fanother.tellg();
 			fanother.seekg(0,fin.beg);
@@ -82,35 +77,74 @@ bool Space_Saver::new_file_name_compare(std::string file_name, std::string user)
 	fin.close();
 	return compare;
 }
+void Space_Saver::add_file_to_db(std::string file_name, std::string user) {
+	if (this->new_file_name_compare(file_name, user)) {
+		std::filesystem::remove("Files\\" + this->all_files[this->all_files.size() - 1].file_name);
+		this->all_files.pop_back();
+		for (auto& file : this->all_files) {
+			if (file.file_name == file_name) {
+				if (std::find(file.file_users.begin(), file.file_users.end(), user) == file.file_users.end()) {
+					file.file_users.push_back(user);
+				}
+				reset_a_file_info();
+			}
+		}
+	}
+	else {
+		set_a_line(this->all_files[this->all_files.size() - 1]);
+	}
+}
+void Space_Saver::rem_file_from_db(std::string file_name, std::string user) {
 
+	for (auto& file : this->all_files) {
+		if (file_name == file.file_name) {
+			if (file.file_users.size() > 1) {
+				file.file_users.erase(std::find(file.file_users.begin(), file.file_users.end(), user));
+				break;
+			}
 
-std::vector <std::string> Files_Checker::update_all_list(std::string directory_name) {
+			if (file.file_users.size() == 1 && file.file_users[0] == user) {
+				//std::filesystem::remove("Files\\" + file_name);
+				file.file_users.clear();
+				file.file_users.push_back("none");
+				break;
+			}
+			else {
+				std::cout << "none root for user " << user << std::endl;
+				break;
+			}
+		}
+	}
+	this->reset_a_file_info();
+}
+
+std::vector <std::string> Space_Saver::update_all_list() {
 	std::vector <std::string> Files_List;
-	for (auto el : std::filesystem::directory_iterator(directory_name)) {
-		std::filesystem::path filepath = el.path();
-		Files_List.push_back((filepath.string()).erase(0, filepath.string().find_first_of("_") + 1));
+	for (auto el : this->all_files) {
+		Files_List.push_back(el.file_name);
 	}
 	return Files_List;
 }
-std::vector <std::string> Files_Checker::update_own_list(std::string directory_name, std::string user_name) {
+std::vector <std::string> Space_Saver::update_own_list(std::string user_name) {
 	std::vector <std::string> Files_List;
-	for (auto el : std::filesystem::directory_iterator(directory_name)) {
-		std::filesystem::path filepath = el.path();
-		int user_name_poz = filepath.string().find(user_name);
-		if (user_name_poz == 6) {
-			Files_List.push_back((filepath.string()).erase(0, filepath.string().find_first_of("_") + 1));
+	for (auto file : this->all_files) {
+		for (auto user : file.file_users) {
+			if (user == user_name) {
+				Files_List.push_back(file.file_name);
+			}
 		}
 	}
 	return Files_List;
 }
 
 
+
 Files_OPERATOR::Files_OPERATOR() {
 	this->files_data_base.open("files_db.txt");
 	this->read_db();
+	this->files_data_base.close();
 }
 Files_OPERATOR::~Files_OPERATOR() {
-	this->files_data_base.close();
 }
 
 void Files_OPERATOR::read_db() {
@@ -137,5 +171,24 @@ void Files_OPERATOR::read_db() {
 		this->all_files.push_back(file);
 		file.clear_files_state();
 	}
-	
 }
+
+void Files_OPERATOR::set_a_line(files_state new_file) {
+	std::ofstream fout("files_db.txt", std::ios::app);
+	fout << "\n" + new_file.file_name + ":" + new_file.file_users[0];
+	fout.close();
+}
+
+void Files_OPERATOR::reset_a_file_info() {
+	std::ofstream fout("files_db.txt");
+	fout.clear();
+	for (int i = 0; i < this->all_files.size(); i++) {
+		auto file = this->all_files[i];
+		fout << file.file_name;
+		for (auto user : file.file_users) {
+			fout << ":" + user;
+		}
+		if (i != this->all_files.size() - 1) fout << "\n";
+	}
+}
+
