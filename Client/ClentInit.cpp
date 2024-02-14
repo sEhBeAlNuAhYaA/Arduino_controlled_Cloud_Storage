@@ -227,10 +227,6 @@ int main(int argc, char* argv[]){
         //init context and create client class object
         boost::asio::io_context context;
         ClientInit interface(context);
-        for (;;)
-        {
-          
-        }
     }
     catch (std::exception& e)
     { 

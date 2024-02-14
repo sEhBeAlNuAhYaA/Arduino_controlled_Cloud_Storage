@@ -7,7 +7,7 @@ using namespace std;
 
 int main()
 {
-            io_context io(8);
+            io_context io;
             boost::system::error_code com_error;
 
             serial_port com(io);

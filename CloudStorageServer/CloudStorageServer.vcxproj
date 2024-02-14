@@ -135,6 +135,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Arduino_Connector.cpp" />
     <ClCompile Include="bcrypt.cpp" />
     <ClCompile Include="blowfish.cpp" />
     <ClCompile Include="CloudStorageServer.cpp" />
@@ -143,6 +144,7 @@
     <ClCompile Include="user_data.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Arduino_Connector.h" />
     <ClInclude Include="bcrypt.h" />
     <ClInclude Include="Http_processing.h" />
     <ClInclude Include="node_blf.h" />

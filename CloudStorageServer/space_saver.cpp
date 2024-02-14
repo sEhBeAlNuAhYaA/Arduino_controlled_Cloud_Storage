@@ -117,7 +117,29 @@ void Space_Saver::rem_file_from_db(std::string file_name, std::string user) {
 	}
 	this->reset_a_file_info();
 }
+bool Space_Saver::check_a_user(std::string user) {
+	for (auto file : this->all_files) {
+		for (auto one_user : file.file_users) {
+			if (one_user == user) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
 
+bool Space_Saver::check_a_file(std::string file_name, std::string user_name) {
+	for (auto file : this->all_files) {
+		if (file.file_name == file_name) {
+			for (auto one_user : file.file_users) {
+				if (one_user == user_name) {
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
 std::vector <std::string> Space_Saver::update_all_list() {
 	std::vector <std::string> Files_List;
 	for (auto el : this->all_files) {
@@ -136,7 +158,24 @@ std::vector <std::string> Space_Saver::update_own_list(std::string user_name) {
 	}
 	return Files_List;
 }
+int Space_Saver::space_counter(std::string user_name) {
 
+	size_t files_size = 0;
+	for (auto file : this->all_files) {
+		for (auto user : file.file_users) {
+			if (user == user_name) {
+				std::ifstream fin("Files\\" + file.file_name);
+				fin.seekg(0, fin.end);
+				files_size += fin.tellg();
+				fin.close();
+			}
+		}
+	}
+	float procent = float(files_size) / (REPOSITORY_MAX_SIZE) * 100.0;
+	files_size = procent;
+	return files_size;
+
+}
 
 
 Files_OPERATOR::Files_OPERATOR() {

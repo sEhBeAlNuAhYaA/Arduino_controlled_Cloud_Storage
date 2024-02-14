@@ -4,7 +4,7 @@ int BUFFER = 10000;
 int FILE_READ_BUFFER = 9000;
 //constructor
 Client::Client(boost::asio::io_context& context)
-	: context_(context), resolver_(context), socket_(context), endpoints_(resolver_.resolve("127.0.0.1", "80")) {
+	:context_(context), resolver_(context), socket_(context), endpoints_(resolver_.resolve("127.0.0.1", "80")) {
 
 	boost::asio::connect(socket_, endpoints_);
 	this->current_http_request = new char[BUFFER];

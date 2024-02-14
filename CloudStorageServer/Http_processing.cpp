@@ -16,8 +16,6 @@ void http_processing::processing_client_requests(parsed_request parsed_req, std:
 			this->builder.Builder_Answer("200 OK");
 			std::cout << "Client logged in" << std::endl;
 			user_name = this->userdata->get_user_name();
-			
-
 		}
 		else {
 			this->builder.Builder_Answer("401");
@@ -70,12 +68,6 @@ void http_processing::processing_client_requests(parsed_request parsed_req, std:
 		}
 		break;
 	}
-	case DeleteAFile: {
-		//remove a file from repository
-		std::filesystem::remove(this->parsed_req.keys_map["Content-Name"]); 
-		this->builder.Builder_Answer("200 OK");
-		break;
-	}
 	case SendingAFile: {
 		if (this->parsed_req.keys_map["Part-File"] == "start") {
 			this->fileout.open("Files\\" + space_saver.name_compare(this->parsed_req.keys_map["Content-Name"], user_name), std::ios::binary);
@@ -106,11 +98,6 @@ void http_processing::processing_client_requests(parsed_request parsed_req, std:
 		//free space calculation
 		this->builder.Builder_Answer("200 OK");
 		//arduino connection
-		break;
-	}
-	case RequestAnswer: {
-
-		this->builder.Builder_Answer("200 OK");
 		break;
 	}
 	}

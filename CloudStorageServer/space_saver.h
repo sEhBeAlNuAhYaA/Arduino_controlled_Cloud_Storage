@@ -18,8 +18,6 @@ public:
 };
 
 
-
-
 class Files_OPERATOR {
 protected:
 	std::fstream files_data_base;
@@ -40,8 +38,10 @@ public:
 	std::string name_compare(std::string new_file_name, std::string user);
 	bool new_file_name_compare(std::string file_name, std::string user);
 	void add_file_to_db(std::string file_name, std::string user);
-	void rem_file_from_db(std::string file_name,std::string user);
-
+	void rem_file_from_db(std::string file_name, std::string user);
+	bool check_a_user(std::string user);
+	bool check_a_file(std::string file_name, std::string user);
 	std::vector <std::string> update_own_list(std::string user_name);
 	std::vector <std::string> update_all_list();
+	int space_counter(std::string user_name);
 };

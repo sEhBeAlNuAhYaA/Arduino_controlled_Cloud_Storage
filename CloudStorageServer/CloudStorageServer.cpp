@@ -3,7 +3,9 @@
 #include <boost/array.hpp>
 #include <boost/bind.hpp>
 #include <Http_Builder.h>
+#include <string>
 #include "Http_processing.h"
+#include "Arduino_Connector.h"
 
 int BUFFER = 10000;
 
@@ -117,11 +119,17 @@ private:
 				this->setHttp_request(this->http_process.builder.get_HTTP());
 				this->http_process.builder.clearBuilder();
                 break;
-            }
+			}
 			case TakingAFile: {
-				this->cl_state = on_write;
-				Files_Operator(this->server_parser.getPars().type, this->http_process, this->server_parser.getPars());
-				break;
+				if (!this->space_saver.check_a_file(this->server_parser.getPars().keys_map["Content-Name"], this->user_name)) {
+					this->server_builder.Builder_Answer("NO SUCH FILE OR DIRECTORY");
+					break;
+				}
+				else {
+					this->cl_state = on_write;
+					Files_Operator(this->server_parser.getPars().type, this->http_process, this->server_parser.getPars());
+					break;
+				}
 			}
 			case SendingAFile: {
 				this->cl_state = on_read;
@@ -129,10 +137,15 @@ private:
 				break;
 			}
 			case DeleteAFile: {
-                this->space_saver.rem_file_from_db(this->server_parser.getPars().keys_map["Content-Name"], this->user_name);
-                this->server_builder.Builder_Answer("200 OK");
+				if (this->space_saver.check_a_file(this->server_parser.getPars().keys_map["Content-Name"], this->user_name)){
+					this->space_saver.rem_file_from_db(this->server_parser.getPars().keys_map["Content-Name"], this->user_name);
+					this->server_builder.Builder_Answer("200 OK");
+                }
+                else {
+                    this->server_builder.Builder_Answer("NO SUCH FILE OR DIRECTORY");
+                }
 				this->setHttp_request(this->server_builder.get_HTTP());
-                this->server_builder.clearBuilder();
+				this->server_builder.clearBuilder();
 				this->server_parser.clearRequest();
 				break;
 			}
@@ -144,7 +157,12 @@ private:
 				break;
 			}
 			case ArduinoInfo: {
-                
+				Arduino_Connection::send_Arduino_message(Arduino_Connection::serialize_aduino_answer(std::to_string(this->client_ID),
+                    std::to_string(this->space_saver.space_counter(this->user_name))));
+				this->server_builder.Builder_Answer("200 OK");
+				this->setHttp_request(this->server_builder.get_HTTP());
+				this->server_builder.clearBuilder();
+				this->server_parser.clearRequest();
 				break;
 			}
 			}
@@ -271,7 +289,7 @@ private:
 
     void handle_accept(NEW_connection::pointer new_connection, const boost::system::error_code& error) {
         if (!error) {
-            new_connection->start_read();
+             new_connection->start_read();
             //this->client_vector.add_new_client(new_connection);
             client_or_server_color("SERVER");
             std::cout << "CLIENT(ID:" << new_connection->getID() << ") joined the server" << std::endl;
