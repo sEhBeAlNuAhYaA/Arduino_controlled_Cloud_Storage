@@ -14,6 +14,7 @@ void http_processing::complicated_requests_processing(parsed_request parsed_req,
 	case Authorisation: {
 		if (this->userdata->Authorisation(this->parsed_req.keys_map["login"], this->parsed_req.keys_map["password"])) {
 			this->builder.Builder_Answer("200 OK");
+			client_or_server_color("SERVER");
 			std::cout << "Client logged in" << std::endl;
 			user_name = this->userdata->get_user_name();
 		}
@@ -25,6 +26,7 @@ void http_processing::complicated_requests_processing(parsed_request parsed_req,
 	case Registration: {
 		if (this->userdata->Registration(this->parsed_req.keys_map["login"], this->parsed_req.keys_map["password"])) {
 			this->builder.Builder_Answer("200 OK");
+			client_or_server_color("SERVER");
 			std::cout << "Client create new account and logged in" << std::endl;
 			user_name = this->userdata->get_user_name();
 

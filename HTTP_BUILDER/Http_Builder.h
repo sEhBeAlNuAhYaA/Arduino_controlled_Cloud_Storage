@@ -310,6 +310,7 @@ public:
 	}
     
     void setRequest(char* http_parsed) {
+        this->clearRequest();
         memcpy_s(this->http_parsed, HTTP_BUFFER, http_parsed, HTTP_BUFFER);
     }
 

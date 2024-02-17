@@ -201,11 +201,12 @@ public:
 				}
 				this->client.clearRequest();
 				this->http_parser.clearRequest();
-				continue;               
-				std::cout << "\x1b[2J\x1b[H";
+				std::system("cls");
+				std::cout << "\x1B[2J\x1B[H";
+				continue;
 
 			}
-        }
+		}
         catch (std::system_error& error) {
             std::cout << error.what() << std::endl;
             return;

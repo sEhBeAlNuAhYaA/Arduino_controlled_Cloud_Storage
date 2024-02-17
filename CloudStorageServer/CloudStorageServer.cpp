@@ -88,7 +88,6 @@ private:
     
     void handle_write(const boost::system::error_code& err, size_t transferred) {
         if (!err) {
-			this->clearRequest();
             if (this->cl_state == none) {
                 this->start_read();
             }
@@ -108,14 +107,12 @@ private:
 			switch (this->server_parser.getPars().type) {
 			case Authorisation: {
 				this->http_process.complicated_requests_processing(this->server_parser.getPars(), this->user_name, this->space_saver);
-				this->server_parser.clearRequest();
 				this->setHttp_request(this->http_process.builder.get_HTTP());
 				this->http_process.builder.clearBuilder();
 				break;
 			}
             case Registration: {
                 this->http_process.complicated_requests_processing(this->server_parser.getPars(), this->user_name, this->space_saver);
-				this->server_parser.clearRequest();
 				this->setHttp_request(this->http_process.builder.get_HTTP());
 				this->http_process.builder.clearBuilder();
                 break;
@@ -146,14 +143,12 @@ private:
                 }
 				this->setHttp_request(this->server_builder.get_HTTP());
 				this->server_builder.clearBuilder();
-				this->server_parser.clearRequest();
 				break;
 			}
 			case GetFilesList: {
 				this->server_builder.Files_List(space_saver.update_own_list(this->user_name));
 				this->setHttp_request(this->server_builder.get_HTTP());
 				this->server_builder.clearBuilder();
-				this->server_parser.clearRequest();
 				break;
 			}
 			case ArduinoInfo: {
@@ -162,7 +157,6 @@ private:
 				this->server_builder.Builder_Answer("200 OK");
 				this->setHttp_request(this->server_builder.get_HTTP());
 				this->server_builder.clearBuilder();
-				this->server_parser.clearRequest();
 				break;
 			}
 			}
@@ -194,7 +188,6 @@ private:
 			/////////////////////////////////////////////////////////////////////
 			if (parsed_req.keys_map["Part-File"] == "end" ||
 				parsed_req.keys_map["Part-File"] == "full") {
-				this->clearRequest();
 				// set ANSWER
 				server_builder.Builder_Answer("200 OK");
 				this->setHttp_request(server_builder.get_HTTP());
@@ -203,17 +196,12 @@ private:
 				this->cl_state = none;
 				//clear server parser
                 this->space_saver.add_file_to_db(this->server_parser.getPars().keys_map["Content-Name"], this->user_name);
-				this->server_parser.clearRequest();
-
+				
 				//binary part of file comparing
 				return;
 			}
-			//clear client current request
-			this->clearRequest();
-
+		
 			this->start_read();
-
-			this->server_parser.clearRequest();
 		}
 		if (current_request == TakingAFile) {
 			while (true) {
@@ -237,7 +225,6 @@ private:
 				}
 				http_process.builder.clearBuilder();
 			}
-            this->server_parser.clearRequest();
 		}
 	}
 };

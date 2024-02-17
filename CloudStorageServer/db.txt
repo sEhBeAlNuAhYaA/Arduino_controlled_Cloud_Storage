@@ -1,9 +1,4 @@
 dima:dima
 egor:egor
+vanja:bogdan
 igor:igor
-popa:1234
-dim1:1234
-nikita:qwer
-ilja:1234
-matvey:dolbaeb
-nikika:bambam

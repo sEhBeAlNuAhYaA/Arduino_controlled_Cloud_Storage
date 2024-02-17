@@ -22,6 +22,8 @@ Space_Saver::Space_Saver() {
 	this->new_file_name = "";
 }
 std::string Space_Saver::name_compare(std::string new_file_name, const std::string& user) {
+	this->all_files.clear();
+	this->read_db();
 	files_state file;
 	int max_copy = -1;
 	for (auto file : this->all_files) {
@@ -179,14 +181,13 @@ int Space_Saver::space_counter(const std::string& user_name) {
 
 
 Files_OPERATOR::Files_OPERATOR() {
-	this->files_data_base.open("files_db.txt");
 	this->read_db();
-	this->files_data_base.close();
 }
 Files_OPERATOR::~Files_OPERATOR() {
 }
 
 void Files_OPERATOR::read_db() {
+	this->files_data_base.open("files_db.txt");
 	std::string line;
 	files_state file;
 	while (std::getline(this->files_data_base, line)) {
@@ -210,6 +211,7 @@ void Files_OPERATOR::read_db() {
 		this->all_files.push_back(file);
 		file.clear_files_state();
 	}
+	this->files_data_base.close();
 }
 
 void Files_OPERATOR::set_a_line(files_state new_file) {
