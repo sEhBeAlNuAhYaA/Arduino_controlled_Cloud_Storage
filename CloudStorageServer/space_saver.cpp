@@ -21,7 +21,7 @@ void files_state::clear_files_state() {
 Space_Saver::Space_Saver() {
 	this->new_file_name = "";
 }
-std::string Space_Saver::name_compare(std::string new_file_name, std::string user) {
+std::string Space_Saver::name_compare(std::string new_file_name, const std::string& user) {
 	files_state file;
 	int max_copy = -1;
 	for (auto file : this->all_files) {
@@ -38,7 +38,7 @@ std::string Space_Saver::name_compare(std::string new_file_name, std::string use
 	this->all_files.push_back(file);
 	return new_file_name;
 }
-bool Space_Saver::new_file_name_compare(std::string file_name, std::string user) {
+bool Space_Saver::new_file_name_compare(const std::string& file_name, const std::string& user) {
 	this->new_file_name = file_name;
 	files_state new_file;
 	bool compare = false;
@@ -77,7 +77,7 @@ bool Space_Saver::new_file_name_compare(std::string file_name, std::string user)
 	fin.close();
 	return compare;
 }
-void Space_Saver::add_file_to_db(std::string file_name, std::string user) {
+void Space_Saver::add_file_to_db(const std::string& file_name, const std::string& user) {
 	if (this->new_file_name_compare(file_name, user)) {
 		std::filesystem::remove("Files\\" + this->all_files[this->all_files.size() - 1].file_name);
 		this->all_files.pop_back();
@@ -94,7 +94,7 @@ void Space_Saver::add_file_to_db(std::string file_name, std::string user) {
 		set_a_line(this->all_files[this->all_files.size() - 1]);
 	}
 }
-void Space_Saver::rem_file_from_db(std::string file_name, std::string user) {
+void Space_Saver::rem_file_from_db(const std::string& file_name, const std::string& user) {
 
 	for (auto& file : this->all_files) {
 		if (file_name == file.file_name) {
@@ -117,7 +117,7 @@ void Space_Saver::rem_file_from_db(std::string file_name, std::string user) {
 	}
 	this->reset_a_file_info();
 }
-bool Space_Saver::check_a_user(std::string user) {
+bool Space_Saver::check_a_user(const std::string& user) {
 	for (auto file : this->all_files) {
 		for (auto one_user : file.file_users) {
 			if (one_user == user) {
@@ -128,7 +128,7 @@ bool Space_Saver::check_a_user(std::string user) {
 	return false;
 }
 
-bool Space_Saver::check_a_file(std::string file_name, std::string user_name) {
+bool Space_Saver::check_a_file(const std::string& file_name, const std::string& user_name) {
 	for (auto file : this->all_files) {
 		if (file.file_name == file_name) {
 			for (auto one_user : file.file_users) {
@@ -158,7 +158,7 @@ std::vector <std::string> Space_Saver::update_own_list(std::string user_name) {
 	}
 	return Files_List;
 }
-int Space_Saver::space_counter(std::string user_name) {
+int Space_Saver::space_counter(const std::string& user_name) {
 
 	size_t files_size = 0;
 	for (auto file : this->all_files) {

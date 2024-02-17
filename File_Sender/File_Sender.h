@@ -47,7 +47,7 @@ public:
 	int getFileSize() {
 		return this->size_of_file;
 	}
-	void init_File_sender(std::string file_name) {
+	void init_File_sender(const std::string file_name) {
 		//set buffer
 		this->binary_part_of_file = new char[READ_FILE_BUFFER];
 		//open file as binary

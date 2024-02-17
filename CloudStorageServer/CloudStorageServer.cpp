@@ -107,14 +107,14 @@ private:
             
 			switch (this->server_parser.getPars().type) {
 			case Authorisation: {
-				this->http_process.processing_client_requests(this->server_parser.getPars(), this->user_name, this->space_saver);
+				this->http_process.complicated_requests_processing(this->server_parser.getPars(), this->user_name, this->space_saver);
 				this->server_parser.clearRequest();
 				this->setHttp_request(this->http_process.builder.get_HTTP());
 				this->http_process.builder.clearBuilder();
 				break;
 			}
             case Registration: {
-                this->http_process.processing_client_requests(this->server_parser.getPars(), this->user_name, this->space_saver);
+                this->http_process.complicated_requests_processing(this->server_parser.getPars(), this->user_name, this->space_saver);
 				this->server_parser.clearRequest();
 				this->setHttp_request(this->http_process.builder.get_HTTP());
 				this->http_process.builder.clearBuilder();
@@ -190,7 +190,7 @@ private:
 
 		if (current_request == SendingAFile) {
 			/////////////////////////////////////////////////////////////////////
-			http_process.processing_client_requests(parsed_req, this->user_name, this->space_saver);
+			http_process.complicated_requests_processing(parsed_req, this->user_name, this->space_saver);
 			/////////////////////////////////////////////////////////////////////
 			if (parsed_req.keys_map["Part-File"] == "end" ||
 				parsed_req.keys_map["Part-File"] == "full") {
@@ -218,7 +218,7 @@ private:
 		if (current_request == TakingAFile) {
 			while (true) {
                 /////////////////////////////////////////////////////////////////////
-				http_process.processing_client_requests(parsed_req, this->user_name, this->space_saver);
+				http_process.complicated_requests_processing(parsed_req, this->user_name, this->space_saver);
                 /////////////////////////////////////////////////////////////////////
 				this->setHttp_request(http_process.builder.get_HTTP());
 				this->start_write();

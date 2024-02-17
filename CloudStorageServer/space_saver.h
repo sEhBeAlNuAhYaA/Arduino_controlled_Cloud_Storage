@@ -35,13 +35,13 @@ class Space_Saver : protected Files_OPERATOR {
 	std::string new_file_name;
 public:
 	Space_Saver();
-	std::string name_compare(std::string new_file_name, std::string user);
-	bool new_file_name_compare(std::string file_name, std::string user);
-	void add_file_to_db(std::string file_name, std::string user);
-	void rem_file_from_db(std::string file_name, std::string user);
-	bool check_a_user(std::string user);
-	bool check_a_file(std::string file_name, std::string user);
-	std::vector <std::string> update_own_list(std::string user_name);
+	std::string name_compare(std::string new_file_name, const std::string& user);
+	bool new_file_name_compare(const std::string& file_name,const std::string& user);
+	void add_file_to_db(const std::string& file_name, const std::string& user);
+	void rem_file_from_db(const std::string& file_name, const std::string& user);
+	bool check_a_user(const std::string& user);
+	bool check_a_file(const std::string& file_name, const std::string& user);
+	std::vector <std::string> update_own_list(const std::string user_name);
 	std::vector <std::string> update_all_list();
-	int space_counter(std::string user_name);
+	int space_counter(const std::string& user_name);
 };

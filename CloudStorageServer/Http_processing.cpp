@@ -5,7 +5,7 @@ http_processing::http_processing() {
 }
 
 
-void http_processing::processing_client_requests(parsed_request parsed_req, std::string& user_name, Space_Saver& space_saver) {
+void http_processing::complicated_requests_processing(parsed_request parsed_req, std::string& user_name, Space_Saver& space_saver) {
 	//setting request
 	this->parsed_req = parsed_req;
 	//clear this request in queue
@@ -92,12 +92,6 @@ void http_processing::processing_client_requests(parsed_request parsed_req, std:
 			}
 			this->fileout.close();
 		}
-		break;
-	}
-	case ArduinoInfo: {
-		//free space calculation
-		this->builder.Builder_Answer("200 OK");
-		//arduino connection
 		break;
 	}
 	}

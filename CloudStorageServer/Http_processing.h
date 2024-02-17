@@ -23,5 +23,5 @@ private:
     std::ofstream fileout;
 public:
     http_processing();
-    void processing_client_requests(parsed_request parsed_req, std::string& user_name, Space_Saver& space_saver);
+    void complicated_requests_processing(parsed_request parsed_req, std::string& user_name, Space_Saver& space_saver);
 };
