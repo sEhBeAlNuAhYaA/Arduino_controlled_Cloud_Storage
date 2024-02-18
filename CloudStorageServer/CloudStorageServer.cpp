@@ -19,9 +19,6 @@ enum client_state {
     none
 };
 
-class Client_Vector;
-
-
 class NEW_connection
 	: public std::enable_shared_from_this<NEW_connection>
 {
@@ -111,11 +108,11 @@ private:
 				this->http_process.builder.clearBuilder();
 				break;
 			}
-            case Registration: {
-                this->http_process.complicated_requests_processing(this->server_parser.getPars(), this->user_name, this->space_saver);
+			case Registration: {
+				this->http_process.complicated_requests_processing(this->server_parser.getPars(), this->user_name, this->space_saver);
 				this->setHttp_request(this->http_process.builder.get_HTTP());
 				this->http_process.builder.clearBuilder();
-                break;
+				break;
 			}
 			case TakingAFile: {
 				if (!this->space_saver.check_a_file(this->server_parser.getPars().keys_map["Content-Name"], this->user_name)) {
@@ -229,19 +226,41 @@ private:
 	}
 };
 
-class Client_Vector {
-    std::vector <NEW_connection::pointer> client_vector;
+
+
+class single_client_data {
+    NEW_connection::pointer client;
+    int ID;
 public:
-    Client_Vector() {
+    single_client_data(NEW_connection::pointer client, int ID) {
+        this->client = client;
+        this->ID = ID;
     }
-    void add_new_client(NEW_connection::pointer client) {
-        this->client_vector.push_back(client);
+    int get_ID() {
+        return ID;
     }
-    void send_storage_state() {
-        for (auto el : this->client_vector) {
-            //something to write
-            el->start_write();
-        }
+};
+
+class Client_Vector {
+	std::vector <single_client_data> client_vector;
+public:
+	Client_Vector() {
+	}
+	void add_new_client(single_client_data client) {
+		this->client_vector.push_back(client);
+	}
+	void delete_a_client(int ID) {
+		int counter = 0;
+		for (auto client_in_vector : this->client_vector) {
+			if (ID == client_in_vector.get_ID()) {
+				this->client_vector.erase(this->client_vector.begin() + counter);
+				break;
+			}
+			counter++;
+		}
+    }
+    int getClientsCounter() {
+        return this->client_vector.size();
     }
 };
 
@@ -251,7 +270,7 @@ class Cloud_Storage {
     //private context and acceptor
     boost::asio::io_context& context_;
     tcp::acceptor acceptor_;
-    //Client_Vector client_vector;
+    Client_Vector client_vector;
 public:
     Cloud_Storage(boost::asio::io_context& context)
         :context_(context), 
@@ -276,18 +295,24 @@ private:
 
     void handle_accept(NEW_connection::pointer new_connection, const boost::system::error_code& error) {
         if (!error) {
-             new_connection->start_read();
-            //this->client_vector.add_new_client(new_connection);
+            new_connection->start_read();
+            single_client_data new_client(new_connection, new_connection->getID());
+            this->client_vector.add_new_client(new_client);
+			Arduino_Connection::send_Arduino_message(Arduino_Connection::serialize_main_frame(std::to_string(this->client_vector.getClientsCounter())));
+            std::cout << this->client_vector.getClientsCounter() << std::endl;
             client_or_server_color("SERVER");
             std::cout << "CLIENT(ID:" << new_connection->getID() << ") joined the server" << std::endl;
             start_accept();
         }
         else {
+            this->client_vector.delete_a_client(new_connection->getID());
+            std::cout << this->client_vector.getClientsCounter() << std::endl;
             std::cout << error.what() << std::endl;
             return;
         }
     }
 };
+
 
 
 int main()

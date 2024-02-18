@@ -1,6 +1,6 @@
 #include "space_saver.h"
 
-static size_t REPOSITORY_MAX_SIZE = 10000000000;
+static size_t REPOSITORY_MAX_SIZE = 100000000;
 
 files_state::files_state() {
 	this->file_name = "";

@@ -164,15 +164,11 @@ class DisplayInfo{
       }
     }
     void PRINT_CONNECTION(){
-        lcd.clear();
-        lcd.setCursor(0,0);
-        lcd.print("CLIENT 1  ");
-        lcd.print("CON:");
-        lcd.print(this->current_connection_info.substring(0,1));
-        lcd.setCursor(0,1);
-        lcd.print("CLIENT 2  ");
-        lcd.print("CON:");
-        lcd.print(this->current_connection_info.substring(1,2));
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("COUNT OF CLIENTS:");
+      lcd.setCursor(0,1);
+      lcd.print(this->current_connection_info);
     }
     void ERROR(String error){
       lcd.clear();

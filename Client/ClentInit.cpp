@@ -202,7 +202,6 @@ public:
 				this->client.clearRequest();
 				this->http_parser.clearRequest();
 				std::system("cls");
-				std::cout << "\x1B[2J\x1B[H";
 				continue;
 
 			}
