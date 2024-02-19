@@ -75,8 +75,6 @@ This part of documentation consits of development stages and describe all of it.
         * Class for work with display;
         * Methods for catch information from server;
         * Methods for show this info on display;
-        * Methods for connect with joystick;
-        * Processing joystick signals;
     * Part of code for check current server updates;
         * Class for catching server requests;
         * Class for catching server information;

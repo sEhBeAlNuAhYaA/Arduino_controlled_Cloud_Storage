@@ -19,6 +19,9 @@ enum client_state {
     none
 };
 
+
+Arduino_Connector *arduino_connector;
+
 class NEW_connection
 	: public std::enable_shared_from_this<NEW_connection>
 {
@@ -149,7 +152,7 @@ private:
 				break;
 			}
 			case ArduinoInfo: {
-				Arduino_Connection::send_Arduino_message(Arduino_Connection::serialize_aduino_answer(std::to_string(this->client_ID),
+				arduino_connector->sendArduino(Arduino_Connection::serialize_aduino_answer(std::to_string(this->client_ID),
                     std::to_string(this->space_saver.space_counter(this->user_name))));
 				this->server_builder.Builder_Answer("200 OK");
 				this->setHttp_request(this->server_builder.get_HTTP());
@@ -229,28 +232,11 @@ private:
 class Client_Vector : public std::enable_shared_from_this<Client_Vector> {
 	std::vector <std::weak_ptr<NEW_connection>> client_vector;
 	boost::asio::io_context& context;
-	std::mutex mute;
+	std::mutex mute;	
 	int last_size;
-	serial_port com;
-	
 public:
-	Client_Vector(boost::asio::io_context& context) : context(context), com(context) {
+	Client_Vector(boost::asio::io_context& context) : context(context) {
 		last_size = -1;
-		this->com.open("COM7");
-		com.set_option(serial_port_base::baud_rate(57600));
-		boost::system::error_code com_error;
-
-		if (com_error) {
-			if (com_error == std::errc::permission_denied) {
-				std::cout << "COM-port is busy!" << std::endl;
-			}
-			else if (com_error == std::errc::no_such_file_or_directory) {
-				std::cout << "Not connected(Arduino)";
-			}
-			else {
-				std::cout << com_error.what();
-			}
-		}
 	}
 	void add_new_client(std::weak_ptr<NEW_connection> client) {
 		std::lock_guard guard(this->mute);
@@ -268,20 +254,12 @@ public:
 		}
 		if (this->last_size != new_size) {
 			this->last_size = new_size;
-			this->sendArduino(Arduino_Connection::serialize_main_frame(std::to_string(this->getClientsCounter())));
+			arduino_connector->sendArduino(Arduino_Connection::serialize_main_frame(std::to_string(this->getClientsCounter())));
 		}
 
 		post(this->context,
 			std::bind(&Client_Vector::update_clients_list,
 				shared_from_this()));
-	}
-
-	void sendArduino(const std::string message) {
-		std::lock_guard guard(this->mute);
-		if (message.size() > 1) {
-			com.write_some(const_buffer(message.c_str(), message.size()));
-		}
-		std::cout << message << std::endl;
 	}
 
 	int getClientsCounter() {
@@ -345,6 +323,7 @@ int main()
 { 
     
     boost::asio::io_context context;
+	arduino_connector = new Arduino_Connector(context);
     Cloud_Storage storage(context);
 
     client_or_server_color("SERVER");
