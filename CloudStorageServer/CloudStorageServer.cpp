@@ -226,42 +226,67 @@ private:
 	}
 };
 
-
-
-class single_client_data {
-    NEW_connection::pointer client;
-    int ID;
+class Client_Vector : public std::enable_shared_from_this<Client_Vector> {
+	std::vector <std::weak_ptr<NEW_connection>> client_vector;
+	boost::asio::io_context& context;
+	std::mutex mute;
+	int last_size;
+	serial_port com;
+	
 public:
-    single_client_data(NEW_connection::pointer client, int ID) {
-        this->client = client;
-        this->ID = ID;
-    }
-    int get_ID() {
-        return ID;
-    }
-};
+	Client_Vector(boost::asio::io_context& context) : context(context), com(context) {
+		last_size = -1;
+		this->com.open("COM7");
+		com.set_option(serial_port_base::baud_rate(57600));
+		boost::system::error_code com_error;
 
-class Client_Vector {
-	std::vector <single_client_data> client_vector;
-public:
-	Client_Vector() {
+		if (com_error) {
+			if (com_error == std::errc::permission_denied) {
+				std::cout << "COM-port is busy!" << std::endl;
+			}
+			else if (com_error == std::errc::no_such_file_or_directory) {
+				std::cout << "Not connected(Arduino)";
+			}
+			else {
+				std::cout << com_error.what();
+			}
+		}
 	}
-	void add_new_client(single_client_data client) {
+	void add_new_client(std::weak_ptr<NEW_connection> client) {
+		std::lock_guard guard(this->mute);
 		this->client_vector.push_back(client);
 	}
-	void delete_a_client(int ID) {
-		int counter = 0;
-		for (auto client_in_vector : this->client_vector) {
-			if (ID == client_in_vector.get_ID()) {
-				this->client_vector.erase(this->client_vector.begin() + counter);
-				break;
-			}
-			counter++;
+	void update_clients_list() {
+		int new_size = this->client_vector.size();
+		if (!this->client_vector.empty()) {
+			std::lock_guard guard(this->mute);
+			this->client_vector.erase(std::remove_if(
+				this->client_vector.begin(),
+				this->client_vector.end(),
+				[](std::weak_ptr<NEW_connection>& con) {return con.expired(); }),
+				this->client_vector.end());
 		}
-    }
-    int getClientsCounter() {
-        return this->client_vector.size();
-    }
+		if (this->last_size != new_size) {
+			this->last_size = new_size;
+			this->sendArduino(Arduino_Connection::serialize_main_frame(std::to_string(this->getClientsCounter())));
+		}
+
+		post(this->context,
+			std::bind(&Client_Vector::update_clients_list,
+				shared_from_this()));
+	}
+
+	void sendArduino(const std::string message) {
+		std::lock_guard guard(this->mute);
+		if (message.size() > 1) {
+			com.write_some(const_buffer(message.c_str(), message.size()));
+		}
+		std::cout << message << std::endl;
+	}
+
+	int getClientsCounter() {
+		return this->client_vector.size();
+	}
 };
 
 
@@ -270,14 +295,16 @@ class Cloud_Storage {
     //private context and acceptor
     boost::asio::io_context& context_;
     tcp::acceptor acceptor_;
-    Client_Vector client_vector;
+    std::shared_ptr <Client_Vector> client_vector;
 public:
     Cloud_Storage(boost::asio::io_context& context)
-        :context_(context), 
-        acceptor_(context, tcp::endpoint(tcp::v4(),80)) 
+        :context_(context),
+        acceptor_(context, tcp::endpoint(tcp::v4(), 80))
     {
         start_accept();
         std::filesystem::create_directories("Files");
+		client_vector = std::make_shared <Client_Vector>(context);
+		this->client_vector->update_clients_list();
     }
 private:
     void start_accept() {
@@ -296,17 +323,16 @@ private:
     void handle_accept(NEW_connection::pointer new_connection, const boost::system::error_code& error) {
         if (!error) {
             new_connection->start_read();
-            single_client_data new_client(new_connection, new_connection->getID());
-            this->client_vector.add_new_client(new_client);
-			Arduino_Connection::send_Arduino_message(Arduino_Connection::serialize_main_frame(std::to_string(this->client_vector.getClientsCounter())));
-            std::cout << this->client_vector.getClientsCounter() << std::endl;
+
+            this->client_vector->add_new_client(new_connection);
+
+            
+			std::cout << this->client_vector->getClientsCounter() << std::endl;
             client_or_server_color("SERVER");
             std::cout << "CLIENT(ID:" << new_connection->getID() << ") joined the server" << std::endl;
             start_accept();
         }
         else {
-            this->client_vector.delete_a_client(new_connection->getID());
-            std::cout << this->client_vector.getClientsCounter() << std::endl;
             std::cout << error.what() << std::endl;
             return;
         }

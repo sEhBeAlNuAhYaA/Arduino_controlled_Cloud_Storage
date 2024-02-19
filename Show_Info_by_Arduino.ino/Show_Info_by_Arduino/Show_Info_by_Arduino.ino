@@ -65,7 +65,6 @@ class DisplayInfo{
 
   public:
     DisplayInfo(){
-      
       this->current_client = 0;
       this->current_connection_info = "00";
       this->current_rep_info = "00";
@@ -82,8 +81,9 @@ class DisplayInfo{
     }
     bool Catch_connection(){
       String con_info = "";
+      
       if(Serial.available()){
-        con_info = Serial.readStringUntil('$');
+        con_info = Serial.readString();
         if(con_info.equals(this->prev_message)){
           return 0;
         }
@@ -99,6 +99,12 @@ class DisplayInfo{
           this->prev_message = con_info;
           return 1;
         }
+        lcd.clear();
+        lcd.setCursor(0,0);
+        lcd.print(con_info);
+        lcd.setCursor(0,1);
+        lcd.print(con_info.length());
+        delay(2000);
         ERROR("WRONG SERIAL");
         return 0;
       }else{
@@ -176,7 +182,7 @@ class DisplayInfo{
       lcd.print(error);
       lcd.setCursor(0,1);
       lcd.print("RESTART DEVICE");
-      delay(10000);
+      //delay(10000);
     }
 };
 
@@ -184,7 +190,7 @@ DisplayInfo* disp;
 
 void setup(){
   Serial.begin(57600);
-
+ 
   lcd.init();                     
   lcd.backlight();
   disp = new DisplayInfo();
@@ -196,7 +202,16 @@ void setup(){
   lcd.createChar(4,load_close);
   
 }
-
+bool isitconnected = false;
 void loop(){
-  disp->Update_Display();
+  if (isitconnected == false){
+    if(Serial.available()){
+      char open_buffer[2];
+      Serial.readBytes(open_buffer,2);
+      isitconnected = true;
+    }
+  }else{
+    disp->Update_Display();
+  }
+  
 }
