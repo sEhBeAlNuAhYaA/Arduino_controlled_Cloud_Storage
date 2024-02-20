@@ -1,4 +1,1 @@
-dima:dima
-egor:egor
-vanja:bogdan
-igor:igor
+dima:$2b$10$4U.HSEbRIx1iQhvli9mtv.hiMcBzV/LM23ChrtffrcrBM7HM3HSE6

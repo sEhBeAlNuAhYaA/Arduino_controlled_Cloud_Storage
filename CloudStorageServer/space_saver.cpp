@@ -48,10 +48,6 @@ bool Space_Saver::new_file_name_compare(const std::string& file_name, const std:
 	std::string f = "Files\\"  + this->all_files[this->all_files.size() - 1].file_name;
 	std::ifstream fin;
 	fin.open(f, std::ios::binary);
-	//size of input file 
-	if (fin.is_open()) {
-		std::cout << 1;
-	}
 	fin.seekg(0,fin.end);
 	size_t fin_size = fin.tellg();
 	fin.seekg(0,fin.beg);
@@ -216,7 +212,12 @@ void Files_OPERATOR::read_db() {
 
 void Files_OPERATOR::set_a_line(files_state new_file) {
 	std::ofstream fout("files_db.txt", std::ios::app);
-	fout << "\n" + new_file.file_name + ":" + new_file.file_users[0];
+	if (!fout.is_open()) {
+		fout << new_file.file_name + ":" + new_file.file_users[0];
+	}
+	else {
+		fout << "\n" + new_file.file_name + ":" + new_file.file_users[0];
+	}
 	fout.close();
 }
 

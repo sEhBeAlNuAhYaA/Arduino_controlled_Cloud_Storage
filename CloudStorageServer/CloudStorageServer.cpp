@@ -303,9 +303,7 @@ private:
             new_connection->start_read();
 
             this->client_vector->add_new_client(new_connection);
-
             
-			std::cout << this->client_vector->getClientsCounter() << std::endl;
             client_or_server_color("SERVER");
             std::cout << "CLIENT(ID:" << new_connection->getID() << ") joined the server" << std::endl;
             start_accept();

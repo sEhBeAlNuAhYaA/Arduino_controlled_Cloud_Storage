@@ -13,7 +13,7 @@ bool user_data::Authorisation(std::string login, std::string password) {
 		int login_end_position = line.find(':');
 		login_in_db = line.substr(0, login_end_position);
 		password_in_db = line.substr(login_end_position + 1);
-		if (login == login_in_db && password == password_in_db) {
+		if (login == login_in_db && bcrypt::validatePassword(password, password_in_db)) {
 			this->user_name = login_in_db;
 			return true;
 		}
@@ -26,6 +26,10 @@ bool user_data::Registration(std::string login, std::string password) {
 	this->db.open(this->file_name);
 	std::string login_in_db;
 	std::string line;
+	bool size_of_db = true;
+	if (!this->db.is_open()) {
+		size_of_db = 0;
+	}
 	while (std::getline(this->db, line)) {
 		int login_end_position = line.find(':');
 		login_in_db = line.substr(0, login_end_position);
@@ -36,7 +40,12 @@ bool user_data::Registration(std::string login, std::string password) {
 	this->db.close();
 	std::ofstream out;
 	out.open(this->file_name,std::ios::app);
-	out << "\n" + login + ":" + password;
+	if (!size_of_db){
+		out << login + ":" + bcrypt::generateHash(password);
+	}
+	else {
+		out << "\n" + login + ":" + bcrypt::generateHash(password);
+	}
 	this->user_name = login;
 	out.close();
 	return true;
