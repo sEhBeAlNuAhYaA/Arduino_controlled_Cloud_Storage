@@ -2,11 +2,19 @@
 #include <boost/asio.hpp>
 #include <fstream>
 #include <Http_Builder.h>
-#include "bcrypt.h"
 #include "Client.h"
 #include <thread>
+#include <vector>
 #include <chrono>
 #include <File_Sender.h>
+#include <functional>
+
+#include "ftxui/component/captured_mouse.hpp"    
+#include "ftxui/component/component.hpp"         
+#include "ftxui/component/component_options.hpp" 
+#include "ftxui/component/screen_interactive.hpp"
+
+using namespace ftxui;
 
 class ClientInit {
     requests_types previous_action;
@@ -24,19 +32,32 @@ public:
 		try {
             //authorization cycle
 			while (true) {
-				int in;
-				std::cout << "1. Authentification\n2. Registration" << std::endl;
-				std::cin >> in;
+				
+
+				auto screen = ScreenInteractive::TerminalOutput();
+
+				std::vector<std::string> entries = {
+					"1. Authentification",
+					"2. Registration",
+				};
+				int selected = 0;
+
+				MenuOption option;
+				option.on_enter = screen.ExitLoopClosure();
+				auto menu = Menu(&entries, &selected, option);
+
+				screen.Loop(menu);
+
 				std::string login;
 				std::string password;
-				std::cout << "LOGIN: ";
+				std::cout << "  Login: ";
 				std::cin >> login;
-				std::cout << "PASSWORD: ";
+				std::cout << "  Password: ";
 				std::cin >> password;
-				if (in == 1) {
+				if (selected == 0) {
 					this->client.write_http(this->http_builder.Authentification(Authorisation, login, password));
 				}
-				if (in == 2) {
+				if (selected == 1) {
 					this->client.write_http(this->http_builder.Authentification(Registration, login, password));
 				}
 				this->http_builder.clearBuilder();
@@ -66,14 +87,30 @@ public:
 				this->http_parser.clearRequest();
 
 			}
+			
 
-            //main cycle with all operations
-            int input;
+			system("cls");
 			while (true) {
-				std::cout << "1. send file;\n2. take file;\n3. delete file;\n4. check storage size;\n5. Check files;\ninput: " << std::endl;
-				std::cin >> input;
-				switch (input) {
-				case 1: {
+
+				auto screen1 = ScreenInteractive::TerminalOutput();
+
+				std::vector<std::string> entries1 = {
+					"1. send file",
+					"2. take file",
+					"3. delete file",
+					"4. check storage size",
+					"5. Check files"
+				};
+				int selected1 = 0;
+
+				MenuOption option1;
+				option1.on_enter = screen1.ExitLoopClosure();
+				auto menu1 = Menu(&entries1, &selected1, option1);
+
+				screen1.Loop(menu1);
+
+				switch (selected1) {
+				case 0: {
                     std::string file_name;
 					std::cin >> file_name;
 					File_Sender file_sender;
@@ -119,7 +156,7 @@ public:
 					this->client.clearRequest();
 					break;
 				}
-				case 2: {
+				case 1: {
 					std::ofstream out;
 					std::string file;
 					std::cin >> file;
@@ -167,27 +204,30 @@ public:
 					this->client.clearRequest();
 					break;
 				}
-				case 3: {
+				case 2: {
 					std::string file_name;
 					std::cin >> file_name;
 					this->client.write_http(this->http_builder.Take_or_Del(DeleteAFile, file_name));
 					this->http_builder.clearBuilder();
 					break;
 				} 
-				case 4: {
+				case 3: {
                     this->client.write_http(this->http_builder.Arduino());
                     this->http_builder.clearBuilder();
 					break;
 				}
-				case 5: {
+				case 4: {
 					this->client.write_http(this->http_builder.get_Files_List());
 					this->http_builder.clearBuilder();
 
 					this->client.read_http();
 					this->http_parser.setRequest(this->client.get_Request());
 					this->http_parser.Parsing();
+					Element document = vbox({text(this->http_parser.getPars().keys_map["info"])| border});
+					auto screen2 = Screen::Create(Dimension::Full(), Dimension::Fit(document));
+					Render(screen2, document);
+					screen2.Print();
 
-					std::cout << this->http_parser.getPars().keys_map["info"] << std::endl;
 					this->http_parser.clearRequest();
 					continue;
 				}

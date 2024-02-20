@@ -5,8 +5,6 @@
 #include <string>
 #include <fstream>
 #include <Http_Builder.h>
-#include <boost/beast/core/detail/base64.hpp>
-#include "bcrypt.h"
 
 using boost::asio::ip::tcp;
 
