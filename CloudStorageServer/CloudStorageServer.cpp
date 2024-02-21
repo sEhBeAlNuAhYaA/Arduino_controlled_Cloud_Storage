@@ -44,6 +44,13 @@ public:
     static pointer create(boost::asio::io_context& context) {
         return pointer(new NEW_connection(context));
     }
+
+	~NEW_connection() {
+		client_or_server_color("CLIENT");
+		color_client_id(this->client_ID);
+		std::cout << " disconnected" << std::endl;
+	}
+
     //get socket
     tcp::socket& get_socket() {
         return socket_;
@@ -119,7 +126,9 @@ private:
 			}
 			case TakingAFile: {
 				if (!this->space_saver.check_a_file(this->server_parser.getPars().keys_map["Content-Name"], this->user_name)) {
-					this->server_builder.Builder_Answer("NO SUCH FILE OR DIRECTORY");
+					this->clearRequest();
+					this->setHttp_request(this->server_builder.Builder_Answer("No such file or directory"));
+					this->server_builder.clearBuilder();
 					break;
 				}
 				else {
@@ -139,7 +148,7 @@ private:
 					this->server_builder.Builder_Answer("200 OK");
                 }
                 else {
-                    this->server_builder.Builder_Answer("NO SUCH FILE OR DIRECTORY");
+                    this->server_builder.Builder_Answer("No such file or directory");
                 }
 				this->setHttp_request(this->server_builder.get_HTTP());
 				this->server_builder.clearBuilder();
@@ -166,19 +175,10 @@ private:
 			}
 
 		}
-		else {
-			if (err.value() == 10054) {
-				client_or_server_color("SERVER");
-                std::cout << "CLIENT(ID:" << this->client_ID << ") disconnected" << std::endl;
-			}
-			else {
-				std::cout << err.what() << std::endl;
-			}
-
+		else if (err.value() != 10054) {
+			std::cout << err.what() << std::endl;
 		}
-    
-                
-    }
+	}
 
 	void Files_Operator(requests_types current_request, http_processing& http_process, parsed_request parsed_req) {
 
@@ -234,8 +234,9 @@ class Client_Vector : public std::enable_shared_from_this<Client_Vector> {
 	boost::asio::io_context& context;
 	std::mutex mute;	
 	int last_size;
+	std::string arduino_config;
 public:
-	Client_Vector(boost::asio::io_context& context) : context(context) {
+	Client_Vector(boost::asio::io_context& context, std::string arduino_config) : context(context), arduino_config(arduino_config) {
 		last_size = -1;
 	}
 	void add_new_client(std::weak_ptr<NEW_connection> client) {
@@ -245,16 +246,19 @@ public:
 	void update_clients_list() {
 		int new_size = this->client_vector.size();
 		if (!this->client_vector.empty()) {
+
 			std::lock_guard guard(this->mute);
 			this->client_vector.erase(std::remove_if(
 				this->client_vector.begin(),
 				this->client_vector.end(),
-				[](std::weak_ptr<NEW_connection>& con) {return con.expired(); }),
-				this->client_vector.end());
+				[](std::weak_ptr<NEW_connection>& con) {return con.expired(); }), this->client_vector.end());
+
 		}
 		if (this->last_size != new_size) {
 			this->last_size = new_size;
-			arduino_connector->sendArduino(Arduino_Connection::serialize_main_frame(std::to_string(this->getClientsCounter())));
+			if (this->arduino_config == "a") {
+				arduino_connector->sendArduino(Arduino_Connection::serialize_main_frame(std::to_string(this->getClientsCounter())));
+			}
 		}
 
 		post(this->context,
@@ -275,13 +279,14 @@ class Cloud_Storage {
     tcp::acceptor acceptor_;
     std::shared_ptr <Client_Vector> client_vector;
 public:
-    Cloud_Storage(boost::asio::io_context& context)
+    Cloud_Storage(boost::asio::io_context& context, std::string arduino_config)
         :context_(context),
         acceptor_(context, tcp::endpoint(tcp::v4(), 80))
     {
         start_accept();
         std::filesystem::create_directories("Files");
-		client_vector = std::make_shared <Client_Vector>(context);
+		client_vector = std::make_shared <Client_Vector>(context, arduino_config);
+		
 		this->client_vector->update_clients_list();
     }
 private:
@@ -304,8 +309,9 @@ private:
 
             this->client_vector->add_new_client(new_connection);
             
-            client_or_server_color("SERVER");
-            std::cout << "CLIENT(ID:" << new_connection->getID() << ") joined the server" << std::endl;
+            client_or_server_color("CLIENT");
+			color_client_id(new_connection->getID());
+            std::cout << "joined the server" << std::endl;
             start_accept();
         }
         else {
@@ -317,17 +323,19 @@ private:
 
 
 
-int main()
-{ 
-    
-    boost::asio::io_context context;
-	arduino_connector = new Arduino_Connector(context);
-    Cloud_Storage storage(context);
+int main(int argc, char* argv[])
+{
+	boost::asio::io_context context;
 
-    client_or_server_color("SERVER");
-    std::cout << "START" << std::endl;
+	if (argc == 2 && argv[1] == "-a") {
+		arduino_connector = new Arduino_Connector(context);
+	}
+	Cloud_Storage storage(context, std::string(argv[1]));
+	client_or_server_color("SERVER");
+	std::cout << "START" << std::endl;
+	context.run();
 
-    context.run();
-    
-    return 0;
+
+
+	return 0;
 }

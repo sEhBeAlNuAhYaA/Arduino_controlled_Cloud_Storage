@@ -87,9 +87,8 @@ public:
 				this->http_parser.clearRequest();
 
 			}
-			
-
 			system("cls");
+
 			while (true) {
 
 				auto screen1 = ScreenInteractive::TerminalOutput();
@@ -119,7 +118,12 @@ public:
 
 						if (file_sender.return_action() == "start") {
 							//init file (open it)
-							file_sender.init_File_sender(file_name);
+							if (!file_sender.init_File_sender(file_name)) {
+								std::cout << "  No such file or directory" << std::endl;
+								this->client.clearRequest();
+								break;
+							}
+
 							if (file_sender.return_action() == "start") {
 							this->client.write_http(this->http_builder.Sending_A_File(file_name,
 									file_sender.split_file(),
@@ -171,17 +175,22 @@ public:
                         this->http_parser.setRequest(this->client.get_Request());
                         this->http_parser.Parsing();
 						this->client.clearRequest();
+						if (this->http_parser.getPars().keys_map["info"] == "No such file or directory") {
+							std::cout << "  No such file or directory" << std::endl;
+							this->client.clearRequest();
+							break;
+						}
+
 						std::string part = this->http_parser.getPars().keys_map["Part-File"];
 						double size = stod(this->http_parser.getPars().keys_map["Content-Length"]);
 
-						
+					
 
 						//check for file parts and write those in new file
 						if (part == "start" || part == "body") {
 							out.write(this->http_parser.getPars().binary_part, FILE_READ_BUFFER);
-							std::cout << ((double)out.tellp() / (size)) * 100.0 << "%" << std::endl;
+							std::cout << "(%)" << ((double)out.tellp() / size * 100.0) << std::endl;
 							std::cout << "\x1b[1A";
-							this->http_parser.clearRequest();
 							continue;
 						}
 						if (part == "full" || part == "end") {
@@ -194,9 +203,8 @@ public:
 							else {
 								out.write(this->http_parser.getPars().binary_part, (int)size % FILE_READ_BUFFER);
 							}
-							std::cout << ((double)out.tellp() / size * 100.0) << "%" << std::endl;
+							std::cout << "(%)" << ((double)out.tellp() / size * 100.0) << std::endl;
 							std::cout << "\x1b[1A";
-							this->http_parser.clearRequest();
 							out.close();
 							break;
 						}
@@ -223,16 +231,12 @@ public:
 					this->client.read_http();
 					this->http_parser.setRequest(this->client.get_Request());
 					this->http_parser.Parsing();
-					Element document = vbox({text(this->http_parser.getPars().keys_map["info"])| border});
-					auto screen2 = Screen::Create(Dimension::Full(), Dimension::Fit(document));
-					Render(screen2, document);
-					screen2.Print();
-
-					this->http_parser.clearRequest();
+					std::system("cls");
+					std::cout << this->http_parser.getPars().keys_map["info"] << std::endl;
 					continue;
 				}
 				}
-
+				
 				client.read_http();
 				this->http_parser.setRequest(this->client.get_Request());
 				this->http_parser.Parsing();
@@ -240,7 +244,6 @@ public:
 					std::cout << "-->!<--" << std::endl;
 				}
 				this->client.clearRequest();
-				this->http_parser.clearRequest();
 				std::system("cls");
 				continue;
 

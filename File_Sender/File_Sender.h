@@ -47,12 +47,13 @@ public:
 	int getFileSize() {
 		return this->size_of_file;
 	}
-	void init_File_sender(const std::string file_name) {
+	bool init_File_sender(const std::string file_name) {
 		//set buffer
 		this->binary_part_of_file = new char[READ_FILE_BUFFER];
 		//open file as binary
 		this->file_name = file_name;
 		this->file.open(this->file_name, std::ios::binary);
+		if (!this->file.is_open()) { return false; }
 		//set size
 		this->file.seekg(0, this->file.end);
 		this->size_of_file = this->file.tellg();
@@ -64,6 +65,7 @@ public:
 		else {
 			this->state = this->start;
 		}
+		return true;
 	}
 
 	void set_right_state() {
