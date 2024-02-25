@@ -85,6 +85,7 @@ void Space_Saver::add_file_to_db(const std::string& file_name, const std::string
 					file.file_users.push_back(user);
 				}
 				reset_a_file_info();
+				
 			}
 		}
 	}
@@ -232,5 +233,7 @@ void Files_OPERATOR::reset_a_file_info() {
 		}
 		if (i != this->all_files.size() - 1) fout << "\n";
 	}
+	fout.close();
 }
+
 

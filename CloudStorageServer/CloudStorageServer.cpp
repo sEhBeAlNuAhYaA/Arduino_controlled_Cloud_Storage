@@ -6,6 +6,7 @@
 #include <string>
 #include "Http_processing.h"
 #include "Arduino_Connector.h"
+#include "Server_Client_files_mapping.h"
 
 int BUFFER = 10000;
 
@@ -14,13 +15,13 @@ using boost::asio::ip::tcp;
 static int client_ID_counter = 0;
 
 enum client_state {
-    on_read,
-    on_write,
-    none
+	on_read,
+	on_write,
+	none
 };
 
-
-Arduino_Connector *arduino_connector;
+std::unique_ptr <Files_Mapping> files_mapping;
+std::unique_ptr <Arduino_Connector> arduino_connector;
 
 class NEW_connection
 	: public std::enable_shared_from_this<NEW_connection>
@@ -37,13 +38,13 @@ class NEW_connection
 	Http_Builder server_builder;
 	Http_Parser server_parser;
 
-    Space_Saver space_saver;
+	Space_Saver space_saver;
 public:
 	typedef std::shared_ptr<NEW_connection> pointer;
 
-    static pointer create(boost::asio::io_context& context) {
-        return pointer(new NEW_connection(context));
-    }
+	static pointer create(boost::asio::io_context& context) {
+		return pointer(new NEW_connection(context));
+	}
 
 	~NEW_connection() {
 		client_or_server_color("CLIENT");
@@ -51,75 +52,79 @@ public:
 		std::cout << " disconnected" << std::endl;
 	}
 
-    //get socket
-    tcp::socket& get_socket() {
-        return socket_;
-    }
+	//get socket
+	tcp::socket& get_socket() {
+		return socket_;
+	}
 
-    void start_write(){
-        socket_.async_write_some(boost::asio::mutable_buffer(this->http_request, BUFFER),
-            boost::bind(&NEW_connection::handle_write, shared_from_this(), 
-                boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred)); 
-    }
+	void start_write() {
+		socket_.async_write_some(boost::asio::mutable_buffer(this->http_request, BUFFER),
+			boost::bind(&NEW_connection::handle_write, shared_from_this(),
+				boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+	}
 
-    void start_read() {
-        socket_.async_read_some(boost::asio::mutable_buffer(this->http_request, BUFFER),
-            boost::bind(&NEW_connection::handle_read, shared_from_this(),
-               boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));         
-    }
+	void start_read() {
+		socket_.async_read_some(boost::asio::mutable_buffer(this->http_request, BUFFER),
+			boost::bind(&NEW_connection::handle_read, shared_from_this(),
+				boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+	}
 
-    int getID() {
-        return this->client_ID;
-    }
+	int getID() {
+		return this->client_ID;
+	}
 
-    void setHttp_request(char* input_message) {
-        memcpy_s(this->http_request, BUFFER, input_message, BUFFER);
-    }
-    
+	std::string get_user_name() {
+		return this->user_name;
+	}
+
+	void setHttp_request(char* input_message) {
+		memcpy_s(this->http_request, BUFFER, input_message, BUFFER);
+	}
+
 private:
-    void clearRequest() {
-        memset(this->http_request, '\0', BUFFER);
-    }
+	void clearRequest() {
+		memset(this->http_request, '\0', BUFFER);
+	}
 
-    NEW_connection(boost::asio::io_context& context)
-        : socket_(context) {
+	NEW_connection(boost::asio::io_context& context)
+		: socket_(context) {
 
-        client_ID_counter++;
-        client_ID = client_ID_counter;
-        this->http_request = new char[BUFFER];
-        memset(this->http_request, '\0', BUFFER);
-        this->cl_state = none;
-       
-    }
+		client_ID_counter++;
+		client_ID = client_ID_counter;
+		this->http_request = new char[BUFFER];
+		memset(this->http_request, '\0', BUFFER);
+		this->cl_state = none;
 
-    
-    void handle_write(const boost::system::error_code& err, size_t transferred) {
-        if (!err) {
-            if (this->cl_state == none) {
-                this->start_read();
-            }
-        }
-        else {
-            std::cout << err.what() << std::endl;
-        }
-    }
+	}
 
-    void handle_read(const boost::system::error_code& err, size_t transferred) {
-                
-        if (!err) {  
-            //std::cout << this->http_request << std::endl;
-            this->server_parser.setRequest(this->http_request);
+
+	void handle_write(const boost::system::error_code& err, size_t transferred) {
+		if (!err) {
+			if (this->cl_state == none) {
+				this->start_read();
+			}
+		}
+		else {
+			std::cout << err.what() << std::endl;
+		}
+	}
+
+	void handle_read(const boost::system::error_code& err, size_t transferred) {
+
+		if (!err) {
+			//std::cout << this->http_request << std::endl;
+			this->server_parser.setRequest(this->http_request);
 			this->server_parser.Parsing();
-            
+
 			switch (this->server_parser.getPars().type) {
 			case Authorisation: {
-				this->http_process.complicated_requests_processing(this->server_parser.getPars(), this->user_name, this->space_saver);
+				this->http_process.complicated_requests_processing(this->server_parser.getPars(), this->user_name, this->space_saver, *files_mapping);
 				this->setHttp_request(this->http_process.builder.get_HTTP());
 				this->http_process.builder.clearBuilder();
 				break;
 			}
 			case Registration: {
-				this->http_process.complicated_requests_processing(this->server_parser.getPars(), this->user_name, this->space_saver);
+				this->http_process.complicated_requests_processing(this->server_parser.getPars(), this->user_name, this->space_saver,*files_mapping);
 				this->setHttp_request(this->http_process.builder.get_HTTP());
 				this->http_process.builder.clearBuilder();
 				break;
@@ -143,13 +148,13 @@ private:
 				break;
 			}
 			case DeleteAFile: {
-				if (this->space_saver.check_a_file(this->server_parser.getPars().keys_map["Content-Name"], this->user_name)){
+				if (this->space_saver.check_a_file(this->server_parser.getPars().keys_map["Content-Name"], this->user_name)) {
 					this->space_saver.rem_file_from_db(this->server_parser.getPars().keys_map["Content-Name"], this->user_name);
 					this->server_builder.Builder_Answer("200 OK");
-                }
-                else {
-                    this->server_builder.Builder_Answer("No such file or directory");
-                }
+				}
+				else {
+					this->server_builder.Builder_Answer("No such file or directory");
+				}
 				this->setHttp_request(this->server_builder.get_HTTP());
 				this->server_builder.clearBuilder();
 				break;
@@ -162,7 +167,7 @@ private:
 			}
 			case ArduinoInfo: {
 				arduino_connector->sendArduino(Arduino_Connection::serialize_aduino_answer(std::to_string(this->client_ID),
-                    std::to_string(this->space_saver.space_counter(this->user_name))));
+					std::to_string(this->space_saver.space_counter(this->user_name))));
 				this->server_builder.Builder_Answer("200 OK");
 				this->setHttp_request(this->server_builder.get_HTTP());
 				this->server_builder.clearBuilder();
@@ -184,7 +189,7 @@ private:
 
 		if (current_request == SendingAFile) {
 			/////////////////////////////////////////////////////////////////////
-			http_process.complicated_requests_processing(parsed_req, this->user_name, this->space_saver);
+			http_process.complicated_requests_processing(parsed_req, this->user_name, this->space_saver, *files_mapping);
 			/////////////////////////////////////////////////////////////////////
 			if (parsed_req.keys_map["Part-File"] == "end" ||
 				parsed_req.keys_map["Part-File"] == "full") {
@@ -195,19 +200,19 @@ private:
 				//set state
 				this->cl_state = none;
 				//clear server parser
-                this->space_saver.add_file_to_db(this->server_parser.getPars().keys_map["Content-Name"], this->user_name);
-				
+				this->space_saver.add_file_to_db(this->server_parser.getPars().keys_map["Content-Name"], this->user_name);
+
 				//binary part of file comparing
 				return;
 			}
-		
+
 			this->start_read();
 		}
 		if (current_request == TakingAFile) {
 			while (true) {
-                /////////////////////////////////////////////////////////////////////
-				http_process.complicated_requests_processing(parsed_req, this->user_name, this->space_saver);
-                /////////////////////////////////////////////////////////////////////
+				/////////////////////////////////////////////////////////////////////
+				http_process.complicated_requests_processing(parsed_req, this->user_name, this->space_saver,*files_mapping);
+				/////////////////////////////////////////////////////////////////////
 				this->setHttp_request(http_process.builder.get_HTTP());
 				this->start_write();
 
@@ -232,7 +237,7 @@ private:
 class Client_Vector : public std::enable_shared_from_this<Client_Vector> {
 	std::vector <std::weak_ptr<NEW_connection>> client_vector;
 	boost::asio::io_context& context;
-	std::mutex mute;	
+	std::mutex mute;
 	int last_size;
 	std::string arduino_config;
 public:
@@ -269,56 +274,64 @@ public:
 	int getClientsCounter() {
 		return this->client_vector.size();
 	}
+
+	std::vector <std::string> get_users_vector() {
+		std::vector <std::string> users_vector;
+		for (auto el : this->client_vector) {
+			users_vector.push_back(el.lock()->get_user_name());
+		}
+		return users_vector;
+	}
 };
 
 
 
 class Cloud_Storage {
-    //private context and acceptor
-    boost::asio::io_context& context_;
-    tcp::acceptor acceptor_;
-    std::shared_ptr <Client_Vector> client_vector;
+	//private context and acceptor
+	boost::asio::io_context& context_;
+	tcp::acceptor acceptor_;
+	std::shared_ptr <Client_Vector> client_vector;
 public:
-    Cloud_Storage(boost::asio::io_context& context, std::string arduino_config)
-        :context_(context),
-        acceptor_(context, tcp::endpoint(tcp::v4(), 80))
-    {
-        start_accept();
-        std::filesystem::create_directories("Files");
+	Cloud_Storage(boost::asio::io_context& context, std::string arduino_config)
+		:context_(context),
+		acceptor_(context, tcp::endpoint(tcp::v4(), 80))
+	{
+		start_accept();
+		std::filesystem::create_directories("Files");
 		client_vector = std::make_shared <Client_Vector>(context, arduino_config);
-		
+		files_mapping->read_from_db();
 		this->client_vector->update_clients_list();
-    }
+	}
 private:
-    void start_accept() {
-        try {
-            NEW_connection::pointer new_connection = NEW_connection::create(this->context_);
-            acceptor_.async_accept(new_connection->get_socket(),
-                boost::bind(&Cloud_Storage::handle_accept, this, 
-                    new_connection, boost::asio::placeholders::error));
-        }
-        catch (boost::system::error_code& error) {
-            std::cout << error.what() << std::endl;
-        }
-       
-    }
+	void start_accept() {
+		try {
+			NEW_connection::pointer new_connection = NEW_connection::create(this->context_);
+			acceptor_.async_accept(new_connection->get_socket(),
+				boost::bind(&Cloud_Storage::handle_accept, this,
+					new_connection, boost::asio::placeholders::error));
+		}
+	catch (boost::system::error_code& error) {
+			std::cout << error.what() << std::endl;
+		}
 
-    void handle_accept(NEW_connection::pointer new_connection, const boost::system::error_code& error) {
-        if (!error) {
-            new_connection->start_read();
+	}
 
-            this->client_vector->add_new_client(new_connection);
-            
-            client_or_server_color("CLIENT");
+	void handle_accept(NEW_connection::pointer new_connection, const boost::system::error_code& error) {
+		if (!error) {
+			new_connection->start_read();
+
+			this->client_vector->add_new_client(new_connection);
+
+			client_or_server_color("CLIENT");
 			color_client_id(new_connection->getID());
-            std::cout << "joined the server" << std::endl;
-            start_accept();
-        }
-        else {
-            std::cout << error.what() << std::endl;
-            return;
-        }
-    }
+			std::cout << "joined the server" << std::endl;
+			start_accept();
+		}
+		else {
+			std::cout << error.what() << std::endl;
+			return;
+		}
+	}
 };
 
 
@@ -326,14 +339,16 @@ private:
 int main(int argc, char* argv[])
 {
 	boost::asio::io_context context;
-
+	files_mapping = std::make_unique<Files_Mapping>();
 	if (argc == 2 && argv[1] == "-a") {
-		arduino_connector = new Arduino_Connector(context);
+		arduino_connector = std::make_unique<Arduino_Connector>(context);
 	}
 	Cloud_Storage storage(context, std::string(argv[1]));
 	client_or_server_color("SERVER");
 	std::cout << "START" << std::endl;
 	context.run();
+
+
 
 
 

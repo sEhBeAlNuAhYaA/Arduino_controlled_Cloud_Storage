@@ -20,4 +20,4 @@ class Arduino_Connector {
 public:
 	Arduino_Connector(io_context& context);
 	void sendArduino(const std::string message);
-};
+}; 

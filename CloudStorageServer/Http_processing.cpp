@@ -5,7 +5,7 @@ http_processing::http_processing() {
 }
 
 
-void http_processing::complicated_requests_processing(parsed_request parsed_req, std::string& user_name, Space_Saver& space_saver) {
+void http_processing::complicated_requests_processing(parsed_request parsed_req, std::string& user_name, Space_Saver& space_saver, Files_Mapping& files_mapping) {
 	//setting request
 	this->parsed_req = parsed_req;
 	//clear this request in queue
@@ -72,8 +72,11 @@ void http_processing::complicated_requests_processing(parsed_request parsed_req,
 	}
 	case SendingAFile: {
 		if (this->parsed_req.keys_map["Part-File"] == "start") {
-			this->fileout.open("Files\\" + space_saver.name_compare(this->parsed_req.keys_map["Content-Name"], user_name), std::ios::binary);
+			std::string new_file_name = space_saver.name_compare(this->parsed_req.keys_map["Content-Name"], user_name);
+			files_mapping.add_a_line_for_user(user_name, new_file_name, this->parsed_req.keys_map["Content-Name"]);
+			this->fileout.open("Files\\" + new_file_name, std::ios::binary);
 			this->fileout.write(this->parsed_req.binary_part, 9000);
+
 		}
 		if (this->parsed_req.keys_map["Part-File"] == "body") {
 			this->fileout.write(this->parsed_req.binary_part, 9000);
@@ -82,7 +85,9 @@ void http_processing::complicated_requests_processing(parsed_request parsed_req,
 			this->parsed_req.keys_map["Part-File"] == "full") {
 
 			if (this->parsed_req.keys_map["Part-File"] == "full") {
-				this->fileout.open("Files\\" + space_saver.name_compare(this->parsed_req.keys_map["Content-Name"], user_name), std::ios::binary);
+				std::string new_file_name = space_saver.name_compare(this->parsed_req.keys_map["Content-Name"], user_name);
+				files_mapping.add_a_line_for_user(user_name, new_file_name, this->parsed_req.keys_map["Content-Name"]);
+				this->fileout.open("Files\\" + new_file_name, std::ios::binary);
 				this->fileout.write(this->parsed_req.binary_part, stoi(this->parsed_req.keys_map["Content-Length"]));
 			}
 			else if (stoi(this->parsed_req.keys_map["Content-Length"]) % 9000 == 0) {
@@ -90,7 +95,7 @@ void http_processing::complicated_requests_processing(parsed_request parsed_req,
 			}
 			else {
 				this->fileout.write(this->parsed_req.binary_part, stoi(this->parsed_req.keys_map["Content-Length"]) % 9000);
-			
+
 			}
 			this->fileout.close();
 		}
