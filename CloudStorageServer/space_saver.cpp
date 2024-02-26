@@ -17,11 +17,11 @@ void files_state::clear_files_state() {
 	this->file_users.clear();
 }
 
-
+ 
 Space_Saver::Space_Saver() {
 	this->new_file_name = "";
 }
-std::string Space_Saver::name_compare(std::string new_file_name, const std::string& user) {
+std::string Space_Saver::name_compare(std::string new_file_name, const std::string& user, Files_Mapping& files_mapping) {
 	this->all_files.clear();
 	this->read_db();
 	files_state file;
@@ -32,8 +32,10 @@ std::string Space_Saver::name_compare(std::string new_file_name, const std::stri
 		}
 	}
 	if (max_copy != -1) {
+		std::string old_name = new_file_name;
 		new_file_name.insert(0, "(" + std::to_string(max_copy + 1) + ")");
 		file.file_name_copy_counter = max_copy + 1;
+		files_mapping.add_a_line_for_user(user, new_file_name, old_name);
 	}
 	file.file_name = new_file_name;
 	file.file_users.push_back(user);
@@ -150,7 +152,7 @@ std::vector <std::string> Space_Saver::update_own_list(std::string user_name) {
 	std::vector <std::string> Files_List;
 	for (auto file : this->all_files) {
 		for (auto user : file.file_users) {
-			if (user == user_name) {
+			if (user == user_name && file.file_name_copy_counter == 0) {
 				Files_List.push_back(file.file_name);
 			}
 		}
@@ -212,8 +214,15 @@ void Files_OPERATOR::read_db() {
 }
 
 void Files_OPERATOR::set_a_line(files_state new_file) {
-	std::ofstream fout("files_db.txt", std::ios::app);
-	if (!fout.is_open()) {
+	bool is_file = false;
+	if (std::filesystem::exists("files_db.txt")) {
+		is_file = true;
+	}
+
+	std::fstream fout;
+	fout.open("files_db.txt", std::ios::app);
+
+	if (!is_file) {
 		fout << new_file.file_name + ":" + new_file.file_users[0];
 	}
 	else {

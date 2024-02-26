@@ -4,7 +4,7 @@
 #include <fstream>
 #include <string>
 #include <filesystem>
-
+#include "Server_Client_files_mapping.h"
 
 class files_state {
 public:
@@ -35,7 +35,7 @@ class Space_Saver : protected Files_OPERATOR {
 	std::string new_file_name;
 public:
 	Space_Saver();
-	std::string name_compare(std::string new_file_name, const std::string& user);
+	std::string name_compare(std::string new_file_name, const std::string& user, Files_Mapping& files_mapping);
 	bool new_file_name_compare(const std::string& file_name, const std::string& user);
 	void add_file_to_db(const std::string& file_name, const std::string& user);
 	void rem_file_from_db(const std::string& file_name, const std::string& user);

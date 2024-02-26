@@ -29,7 +29,7 @@ void http_processing::complicated_requests_processing(parsed_request parsed_req,
 			client_or_server_color("SERVER");
 			std::cout << "Client create new account and logged in" << std::endl;
 			user_name = this->userdata->get_user_name();
-
+			files_mapping.add_new_user(user_name);
 		}
 		else {
 			this->builder.Builder_Answer("380");
@@ -41,7 +41,7 @@ void http_processing::complicated_requests_processing(parsed_request parsed_req,
 		//bilding a request with file data
 		if (this->file_sender.return_action() == "start") {
 			//init file (open it)
-			this->file_sender.init_File_sender("Files\\" + this->parsed_req.keys_map["Content-Name"]);
+			this->file_sender.init_File_sender("Files\\" + files_mapping.client_server_alternative(user_name,this->parsed_req.keys_map["Content-Name"]));
 			if (this->file_sender.return_action() == "start") {
 				this->builder.Sending_A_File(this->parsed_req.keys_map["Content-Name"],
 					this->file_sender.split_file(),
@@ -72,9 +72,7 @@ void http_processing::complicated_requests_processing(parsed_request parsed_req,
 	}
 	case SendingAFile: {
 		if (this->parsed_req.keys_map["Part-File"] == "start") {
-			std::string new_file_name = space_saver.name_compare(this->parsed_req.keys_map["Content-Name"], user_name);
-			files_mapping.add_a_line_for_user(user_name, new_file_name, this->parsed_req.keys_map["Content-Name"]);
-			this->fileout.open("Files\\" + new_file_name, std::ios::binary);
+			this->fileout.open("Files\\" + space_saver.name_compare(this->parsed_req.keys_map["Content-Name"], user_name, files_mapping), std::ios::binary);
 			this->fileout.write(this->parsed_req.binary_part, 9000);
 
 		}
@@ -85,9 +83,7 @@ void http_processing::complicated_requests_processing(parsed_request parsed_req,
 			this->parsed_req.keys_map["Part-File"] == "full") {
 
 			if (this->parsed_req.keys_map["Part-File"] == "full") {
-				std::string new_file_name = space_saver.name_compare(this->parsed_req.keys_map["Content-Name"], user_name);
-				files_mapping.add_a_line_for_user(user_name, new_file_name, this->parsed_req.keys_map["Content-Name"]);
-				this->fileout.open("Files\\" + new_file_name, std::ios::binary);
+				this->fileout.open("Files\\" + space_saver.name_compare(this->parsed_req.keys_map["Content-Name"], user_name, files_mapping), std::ios::binary);
 				this->fileout.write(this->parsed_req.binary_part, stoi(this->parsed_req.keys_map["Content-Length"]));
 			}
 			else if (stoi(this->parsed_req.keys_map["Content-Length"]) % 9000 == 0) {

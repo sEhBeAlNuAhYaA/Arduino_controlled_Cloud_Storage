@@ -130,17 +130,11 @@ private:
 				break;
 			}
 			case TakingAFile: {
-				if (!this->space_saver.check_a_file(this->server_parser.getPars().keys_map["Content-Name"], this->user_name)) {
-					this->clearRequest();
-					this->setHttp_request(this->server_builder.Builder_Answer("No such file or directory"));
-					this->server_builder.clearBuilder();
-					break;
-				}
-				else {
+								
 					this->cl_state = on_write;
 					Files_Operator(this->server_parser.getPars().type, this->http_process, this->server_parser.getPars());
 					break;
-				}
+				
 			}
 			case SendingAFile: {
 				this->cl_state = on_read;
@@ -160,7 +154,10 @@ private:
 				break;
 			}
 			case GetFilesList: {
-				this->server_builder.Files_List(space_saver.update_own_list(this->user_name));
+				std::vector <std::string> none_copy = space_saver.update_own_list(this->user_name);
+				std::vector <std::string> copy = files_mapping->get_files_list(this->user_name);
+				none_copy.insert(none_copy.end(), copy.begin(), copy.end());
+				this->server_builder.Files_List(none_copy);
 				this->setHttp_request(this->server_builder.get_HTTP());
 				this->server_builder.clearBuilder();
 				break;
@@ -299,6 +296,7 @@ public:
 		start_accept();
 		std::filesystem::create_directories("Files");
 		client_vector = std::make_shared <Client_Vector>(context, arduino_config);
+		files_mapping->load_users(files_mapping->read_users_logins());
 		files_mapping->read_from_db();
 		this->client_vector->update_clients_list();
 	}
