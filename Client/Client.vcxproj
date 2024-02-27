@@ -71,10 +71,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);F:\TRAINEE\Arduino_controlled_Cloud_Storage\BOO;F:\TRAINEE\Arduino_controlled_Cloud_Storage\HTTP_BUILDER;F:\TRAINEE\Arduino_controlled_Cloud_Storage\File_Sender;F:\TRAINEE\Arduino_controlled_Cloud_Storage\ConsoleApplication1\ftxui-5.0.0-win64\include</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);F:\TRAINEE\Arduino_controlled_Cloud_Storage\BOO;F:\TRAINEE\Arduino_controlled_Cloud_Storage\HTTP_BUILDER;F:\TRAINEE\Arduino_controlled_Cloud_Storage\File_Sender;F:\TRAINEE\Arduino_controlled_Cloud_Storage\Client\ftxui-5.0.0-win64\include</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);F:\TRAINEE\Arduino_controlled_Cloud_Storage\BOO;F:\TRAINEE\Arduino_controlled_Cloud_Storage\HTTP_BUILDER;F:\TRAINEE\Arduino_controlled_Cloud_Storage\File_Sender;F:\TRAINEE\Arduino_controlled_Cloud_Storage\ConsoleApplication1\ftxui-5.0.0-win64\include</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);F:\TRAINEE\Arduino_controlled_Cloud_Storage\BOO;F:\TRAINEE\Arduino_controlled_Cloud_Storage\HTTP_BUILDER;F:\TRAINEE\Arduino_controlled_Cloud_Storage\File_Sender;F:\TRAINEE\Arduino_controlled_Cloud_Storage\Client\ftxui-5.0.0-win64\include</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -116,7 +116,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>F:\TRAINEE\Arduino_controlled_Cloud_Storage\ConsoleApplication1\ftxui-5.0.0-win64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ftxui-component.lib;ftxui-dom.lib;ftxui-screen.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ftxui-screen.lib;ftxui-dom.lib;ftxui-component.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -135,7 +135,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>F:\TRAINEE\Arduino_controlled_Cloud_Storage\ConsoleApplication1\ftxui-5.0.0-win64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ftxui-component.lib;ftxui-dom.lib;ftxui-screen.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ftxui-screen.lib;ftxui-dom.lib;ftxui-component.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

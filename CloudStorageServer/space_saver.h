@@ -37,7 +37,7 @@ public:
 	Space_Saver();
 	std::string name_compare(std::string new_file_name, const std::string& user, Files_Mapping& files_mapping);
 	bool new_file_name_compare(const std::string& file_name, const std::string& user);
-	void add_file_to_db(const std::string& file_name, const std::string& user);
+	void add_file_to_db(const std::string& file_name, const std::string& user,Files_Mapping& files_mapping);
 	void rem_file_from_db(const std::string& file_name, const std::string& user);
 	bool check_a_user(const std::string& user);
 	bool check_a_file(const std::string& file_name, const std::string& user);

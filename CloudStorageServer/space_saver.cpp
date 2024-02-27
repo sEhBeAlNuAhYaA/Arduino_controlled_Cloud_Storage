@@ -25,18 +25,18 @@ std::string Space_Saver::name_compare(std::string new_file_name, const std::stri
 	this->all_files.clear();
 	this->read_db();
 	files_state file;
+	std::string old_name = new_file_name;
 	int max_copy = -1;
 	for (auto file : this->all_files) {
 		if (file.file_name == new_file_name) {
 			if (file.file_name_copy_counter > max_copy) max_copy = file.file_name_copy_counter;
-		}
+		}		
 	}
 	if (max_copy != -1) {
-		std::string old_name = new_file_name;
 		new_file_name.insert(0, "(" + std::to_string(max_copy + 1) + ")");
 		file.file_name_copy_counter = max_copy + 1;
-		files_mapping.add_a_line_for_user(user, new_file_name, old_name);
 	}
+	files_mapping.add_a_line_for_user(user, new_file_name, old_name);
 	file.file_name = new_file_name;
 	file.file_users.push_back(user);
 	this->all_files.push_back(file);
@@ -56,13 +56,14 @@ bool Space_Saver::new_file_name_compare(const std::string& file_name, const std:
 	//another file
 	std::ifstream fanother;
 	for (int i = 0; i < this->all_files.size() - 1; i++) {
-		auto file = this->all_files[i];
+		auto& file = this->all_files[i];
+		std::string comp = "(" + std::to_string(file.file_name_copy_counter) + ")";
 		if (this->new_file_name == file.file_name) {
 			fanother.open("Files\\" + file.file_name, std::ios::binary);
-		
-			fanother.seekg(0,fanother.end);
+
+			fanother.seekg(0, fanother.end);
 			size_t fanother_size = fanother.tellg();
-			fanother.seekg(0,fin.beg);
+			fanother.seekg(0, fin.beg);
 
 			if (fin_size == fanother_size) {
 				compare = std::equal(std::istreambuf_iterator<char>(fin.rdbuf()),
@@ -77,17 +78,19 @@ bool Space_Saver::new_file_name_compare(const std::string& file_name, const std:
 	fin.close();
 	return compare;
 }
-void Space_Saver::add_file_to_db(const std::string& file_name, const std::string& user) {
+void Space_Saver::add_file_to_db(const std::string& file_name, const std::string& user,Files_Mapping& files_mapping) {
 	if (this->new_file_name_compare(file_name, user)) {
 		std::filesystem::remove("Files\\" + this->all_files[this->all_files.size() - 1].file_name);
+		files_mapping.delete_a_file(user, this->all_files[this->all_files.size()-1].file_name);
 		this->all_files.pop_back();
 		for (auto& file : this->all_files) {
 			if (file.file_name == file_name) {
 				if (std::find(file.file_users.begin(), file.file_users.end(), user) == file.file_users.end()) {
 					file.file_users.push_back(user);
+					reset_a_file_info();
+					return;
 				}
-				reset_a_file_info();
-				
+				else return; 
 			}
 		}
 	}

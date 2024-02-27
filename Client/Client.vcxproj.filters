@@ -18,23 +18,11 @@
     <ClCompile Include="ClentInit.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="bcrypt.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
-    <ClCompile Include="blowfish.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
     <ClCompile Include="Client.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="bcrypt.h">
-      <Filter>Исходные файлы</Filter>
-    </ClInclude>
-    <ClInclude Include="node_blf.h">
-      <Filter>Исходные файлы</Filter>
-    </ClInclude>
     <ClInclude Include="openbsd.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>

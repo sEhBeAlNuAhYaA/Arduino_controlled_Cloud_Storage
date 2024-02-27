@@ -157,7 +157,7 @@ private:
 				std::vector <std::string> none_copy = space_saver.update_own_list(this->user_name);
 				std::vector <std::string> copy = files_mapping->get_files_list(this->user_name);
 				none_copy.insert(none_copy.end(), copy.begin(), copy.end());
-				this->server_builder.Files_List(none_copy);
+				this->server_builder.Files_List(copy);
 				this->setHttp_request(this->server_builder.get_HTTP());
 				this->server_builder.clearBuilder();
 				break;
@@ -197,7 +197,7 @@ private:
 				//set state
 				this->cl_state = none;
 				//clear server parser
-				this->space_saver.add_file_to_db(this->server_parser.getPars().keys_map["Content-Name"], this->user_name);
+				this->space_saver.add_file_to_db(this->server_parser.getPars().keys_map["Content-Name"], this->user_name, *files_mapping);
 
 				//binary part of file comparing
 				return;

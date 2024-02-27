@@ -21,9 +21,9 @@ void Files_Mapping::read_from_db() {
 
 void Files_Mapping::set_right_copy_number() {
 	for (auto& line : this->files_map_data) {
-		int counter = -1;
 		std::vector <std::string> prev;
 		for (auto el : line.files_map) {
+			int counter = -1;
 			std::string current_str = el.first;
 			for (auto& ul : line.files_map) {
 				if (std::find(prev.begin(), prev.end(),
@@ -143,11 +143,12 @@ void Files_Mapping::write_full(const std::string& user_name) {
 }
 
 void Files_Mapping::delete_a_file(const std::string& user_name, const std::string& server_file) {
-	for (auto user_data : this->files_map_data) {
+	for (auto& user_data : this->files_map_data) {
 		if (user_data.user == user_name) {
-			for (auto el : user_data.files_map) {
+			for (int i = 0; i < user_data.files_map.size(); i++) {
+				auto el = user_data.files_map[i];
 				if (el.first == server_file) {
-					//user_data.files_map.erase(server_file);
+					user_data.files_map.erase(user_data.files_map.begin() + i);
 					break;
 				}
 			}
