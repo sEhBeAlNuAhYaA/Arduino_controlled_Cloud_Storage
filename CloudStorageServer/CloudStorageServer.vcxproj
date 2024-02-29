@@ -140,6 +140,7 @@
     <ClCompile Include="blowfish.cpp" />
     <ClCompile Include="CloudStorageServer.cpp" />
     <ClCompile Include="Http_processing.cpp" />
+    <ClCompile Include="RAID_Manager.cpp" />
     <ClCompile Include="Server_Client_files_mapping.cpp" />
     <ClCompile Include="space_saver.cpp" />
     <ClCompile Include="user_data.cpp" />
@@ -150,6 +151,7 @@
     <ClInclude Include="Http_processing.h" />
     <ClInclude Include="node_blf.h" />
     <ClInclude Include="openbsd.h" />
+    <ClInclude Include="RAID_Manager.h" />
     <ClInclude Include="Server_Client_files_mapping.h" />
     <ClInclude Include="space_saver.h" />
     <ClInclude Include="user_data.h" />

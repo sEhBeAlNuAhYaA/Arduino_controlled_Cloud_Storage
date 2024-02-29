@@ -39,6 +39,9 @@
     <ClCompile Include="Server_Client_files_mapping.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="RAID_Manager.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Http_processing.h">
@@ -63,6 +66,9 @@
       <Filter>Исходные файлы</Filter>
     </ClInclude>
     <ClInclude Include="Server_Client_files_mapping.h">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="RAID_Manager.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
   </ItemGroup>
