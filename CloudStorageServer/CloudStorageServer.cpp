@@ -7,6 +7,7 @@
 #include "Http_processing.h"
 #include "Arduino_Connector.h"
 #include "Server_Client_files_mapping.h"
+#include "RAID_Manager.h"
 
 int BUFFER = 10000;
 
@@ -22,6 +23,7 @@ enum client_state {
 
 std::unique_ptr <Files_Mapping> files_mapping;
 std::unique_ptr <Arduino_Connector> arduino_connector;
+std::unique_ptr <RAID_Manager> raid;
 
 class NEW_connection
 	: public std::enable_shared_from_this<NEW_connection>
@@ -258,7 +260,7 @@ public:
 		}
 		if (this->last_size != new_size) {
 			this->last_size = new_size;
-			if (this->arduino_config == "a") {
+			if (this->arduino_config == "-a") {
 				arduino_connector->sendArduino(Arduino_Connection::serialize_main_frame(std::to_string(this->getClientsCounter())));
 			}
 		}
@@ -338,17 +340,22 @@ int main(int argc, char* argv[])
 {
 	boost::asio::io_context context;
 	files_mapping = std::make_unique<Files_Mapping>();
-	if (argc == 2 && argv[1] == "-a") {
+	if (argc >= 2 && std::string(argv[1]) == "-a") {
 		arduino_connector = std::make_unique<Arduino_Connector>(context);
 	}
+	else if (argc >= 2 && std::string(argv[1]) != "-na") {
+		std::cout << "wrong flag" << std::endl;
+		return 0;
+	}
+	if (argc >= 3 && std::string(argv[2]) == "-r") {
+		std::vector <parts_names> parts = { A1, A2, A3, A4, A5, A6, A7, A8 };
+		raid = std::make_unique<RAID_Manager>("RAID\\raid.txt", parts);
+	}
+
 	Cloud_Storage storage(context, std::string(argv[1]));
 	client_or_server_color("SERVER");
 	std::cout << "START" << std::endl;
 	context.run();
-
-
-
-
 
 	return 0;
 }

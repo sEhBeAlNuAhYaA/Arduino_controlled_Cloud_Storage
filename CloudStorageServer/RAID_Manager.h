@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <filesystem>
+#include <fstream>
 
 
 enum parts_names {
@@ -18,28 +19,32 @@ enum parts_names {
 
 enum disk_type {
 	mirror,
-	main
+	main_
 };
 
-class single_part {
+struct single_part {
 	std::string parts_db;
 	parts_names part_name;
-public:
-	single_part(const std::string& files_db, parts_names part_name);
+
+	single_part();
+	single_part(const std::string& files_db, const parts_names& part_name, std::string directory);
+	void create_a_part(const std::string directory);
 };
 
-class single_disk {
+struct single_disk {
 	std::string disk_db;
 	std::vector <single_part> parts;
-public:
-	single_disk(const std::string& disk_db, std::vector <single_part>& parts);
+
+	single_disk();
+	single_disk(const std::string disk_db, const std::string directory);
+	void fill_disk(const std::vector <single_part> parts);
+	void memoryse_a_disk(const single_disk& disk,std::string directory);
 };
 
-class RAID_Manager {
+struct RAID_Manager {
 	std::string manager_db;
 	std::vector <single_disk> disks;
-public:
-	RAID_Manager(const std::string& manager_db, std::vector <single_disk>& disks);
-	static std::vector <single_disk>& create_system(std::vector <parts_names> parts);
+	std::vector <parts_names> parts_vector;
 
+	RAID_Manager(const std::string& manager_db, const std::vector <parts_names> &parts_vector);
 };
